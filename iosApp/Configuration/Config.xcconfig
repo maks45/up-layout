@@ -1,0 +1,7 @@
+TEAM_ID=
+
+PRODUCT_NAME=UserPositionedLayout
+PRODUCT_BUNDLE_IDENTIFIER=com.mdsw.usrpsnlyt.UserPositionedLayout$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0

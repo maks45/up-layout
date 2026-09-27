@@ -1,0 +1,58 @@
+# UserPositionedLayout
+
+Last update date: 2026-09-27
+
+This is a Kotlin Multiplatform / Compose Multiplatform project targeting Android and iOS.
+
+**UserPositionedLayout** is a composable container where the user can directly manipulate children inside the container:
+
+- change position (drag / move),
+- change rotation angle (rotate),
+- change size (resize / scale).
+
+Additional manipulation functions will be defined later.
+
+* [/up_layout](./up_layout/src) is the library KMP module (the `UserPositionedLayout` container itself, soon to be published as a library).
+  It contains several subfolders:
+  - [commonMain](./up_layout/src/commonMain/kotlin) is for the container state/model, transformation math, and gesture logic common for all targets.
+  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
+
+* [/shared](./shared/src) is the shared KMP demo module that consumes `up_layout` and showcases layout functions.
+  It contains several subfolders:
+  - [commonMain](./shared/src/commonMain/kotlin) is for demo UI code that’s common for all targets.
+  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
+    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
+    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
+
+* [/androidApp](./androidApp) contains the Android demo host application that consumes `shared`.
+
+* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
+  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+
+### Running the apps
+
+Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+
+- Android app: `./gradlew :androidApp:assembleDebug`
+- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+
+### Running tests
+
+Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+
+- Android tests: `./gradlew :shared:testAndroidHostTest`
+- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+
+---
+
+Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+
+## Contributing
+
+When contributing with agentic coding, follow the principles in [AGENTS.md](./AGENTS.md).
+
+## License
+
+This project is open source under the Apache License 2.0. See [LICENSE](./LICENSE).
+
+Full license text: [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
