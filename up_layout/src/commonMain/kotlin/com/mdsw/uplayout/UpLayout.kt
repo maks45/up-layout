@@ -1,5 +1,6 @@
 package com.mdsw.uplayout
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,9 +39,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -125,6 +128,7 @@ private fun EditModeLayout(
     var selectedId by remember { mutableStateOf<String?>(null) }
     val primary = MaterialTheme.colorScheme.primary
     val childSizes = remember { mutableStateMapOf<String, IntSize>() }
+    val childRects = remember { mutableStateMapOf<String, Rect>() }
     val latestItems by rememberUpdatedState(items)
     val latestOnItemChanged by rememberUpdatedState(onItemChanged)
     val latestGrid by rememberUpdatedState(grid)
@@ -159,7 +163,12 @@ private fun EditModeLayout(
                             if (lockedMode == null) {
                                 accumZoom *= zoom
                                 accumRotation += rotationDelta
-                                lockedMode = resolveTransformLock(accumZoom, accumRotation)
+                                lockedMode = resolveTransformLock(
+                                    accumZoom,
+                                    accumRotation,
+                                    scaleLocked = latestGrid.lockScale,
+                                    rotationLocked = latestGrid.lockRotation
+                                )
                             }
                             val mode = lockedMode
                             val currentSelectedId = selectedId
@@ -250,41 +259,46 @@ private fun EditModeLayout(
                                     selectedId = latestItem.id
                                 },
                                 onDragEnd = {
-                                    val size = containerSize.value
-                                    if (size.width > 0 && size.height > 0) {
-                                        val pxToDp = 1f / density.density
-                                        val rect = childRect.value
-                                        val result = resolveDrop(
-                                            containerWidthDp = size.width * pxToDp,
-                                            containerHeightDp = size.height * pxToDp,
-                                            childLeftDp = rect.left * pxToDp,
-                                            childTopDp = rect.top * pxToDp,
-                                            childRightDp = rect.right * pxToDp,
-                                            childBottomDp = rect.bottom * pxToDp,
-                                            alignmentCenterDp = alignmentCenter.value,
-                                            snapStepDp = latestGrid.snapGridSize,
-                                            snapToGrid = latestGrid.snapToGrid
-                                        )
-                                        val current = latestItem
-                                        latestOnItemChanged(
-                                            current.copy(
-                                                alignment = result.alignment,
-                                                padding = result.padding
+                                    if (!latestGrid.lockMove) {
+                                        val size = containerSize.value
+                                        if (size.width > 0 && size.height > 0) {
+                                            val pxToDp = 1f / density.density
+                                            val rect = childRect.value
+                                            val result = resolveDrop(
+                                                containerWidthDp = size.width * pxToDp,
+                                                containerHeightDp = size.height * pxToDp,
+                                                childLeftDp = rect.left * pxToDp,
+                                                childTopDp = rect.top * pxToDp,
+                                                childRightDp = rect.right * pxToDp,
+                                                childBottomDp = rect.bottom * pxToDp,
+                                                alignmentCenterDp = alignmentCenter.value,
+                                                snapStepDp = latestGrid.snapGridSize,
+                                                snapToGrid = latestGrid.snapToGrid
                                             )
-                                        )
+                                            val current = latestItem
+                                            latestOnItemChanged(
+                                                current.copy(
+                                                    alignment = result.alignment,
+                                                    padding = result.padding
+                                                )
+                                            )
+                                        }
                                     }
                                     dragOffset.value = IntOffset.Zero
                                 }
                             ) { change, dragAmount ->
-                                change.consume()
-                                dragOffset.value += IntOffset(
-                                    x = dragAmount.x.toInt(),
-                                    y = dragAmount.y.toInt()
-                                )
+                                if (!latestGrid.lockMove) {
+                                    change.consume()
+                                    dragOffset.value += IntOffset(
+                                        x = dragAmount.x.toInt(),
+                                        y = dragAmount.y.toInt()
+                                    )
+                                }
                             }
                         }
                         .onGloballyPositioned {
                             childRect.value = it.boundsInParent()
+                            childRects[item.id] = it.boundsInParent()
                             childSizes[item.id] = it.size
                         }
                 ) {
@@ -298,6 +312,64 @@ private fun EditModeLayout(
                             }
                     )
                 }
+            }
+        }
+        if (grid.showSnapGuides) {
+            SnapGuidesOverlay(
+                items = items,
+                childRects = childRects,
+                childSizes = childSizes,
+                color = primary
+            )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.SnapGuidesOverlay(
+    items: List<UpItem>,
+    childRects: Map<String, Rect>,
+    childSizes: Map<String, IntSize>,
+    color: Color
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    val isRtl = layoutDirection == LayoutDirection.Rtl
+    Canvas(modifier = Modifier.matchParentSize()) {
+        val dash = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+        items.forEach { item ->
+            val rect = childRects[item.id] ?: return@forEach
+            if (rect == Rect.Zero) return@forEach
+            val center = rect.center
+            val sizePx = childSizes[item.id]
+            snapGuideDirections(item.alignment).forEach { direction ->
+                val start = if (sizePx != null && sizePx.width > 0 && sizePx.height > 0) {
+                    val (startX, startY) = rotatedEdgeMidpoint(
+                        centerX = center.x,
+                        centerY = center.y,
+                        widthPx = sizePx.width.toFloat(),
+                        heightPx = sizePx.height.toFloat(),
+                        rotationDegrees = item.rotationDegrees,
+                        direction = direction
+                    )
+                    Offset(startX, startY)
+                } else {
+                    center
+                }
+                val end = when (direction) {
+                    UpSnapDirection.TOP -> Offset(start.x, 0f)
+                    UpSnapDirection.BOTTOM -> Offset(start.x, size.height)
+                    UpSnapDirection.START ->
+                        if (isRtl) Offset(size.width, start.y) else Offset(0f, start.y)
+                    UpSnapDirection.END ->
+                        if (isRtl) Offset(0f, start.y) else Offset(size.width, start.y)
+                }
+                drawLine(
+                    color = color,
+                    start = start,
+                    end = end,
+                    strokeWidth = 2f,
+                    pathEffect = dash
+                )
             }
         }
     }

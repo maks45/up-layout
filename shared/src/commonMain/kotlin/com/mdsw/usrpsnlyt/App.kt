@@ -76,6 +76,29 @@ fun App() {
                                     menuExpanded = false
                                 }
                             )
+                            if (isEditMode) {
+                                LockToggleItem(
+                                    label = "Lock move",
+                                    locked = gridSettings.lockMove,
+                                    onToggle = {
+                                        gridSettings = gridSettings.copy(lockMove = !gridSettings.lockMove)
+                                    }
+                                )
+                                LockToggleItem(
+                                    label = "Lock rotation",
+                                    locked = gridSettings.lockRotation,
+                                    onToggle = {
+                                        gridSettings = gridSettings.copy(lockRotation = !gridSettings.lockRotation)
+                                    }
+                                )
+                                LockToggleItem(
+                                    label = "Lock scale",
+                                    locked = gridSettings.lockScale,
+                                    onToggle = {
+                                        gridSettings = gridSettings.copy(lockScale = !gridSettings.lockScale)
+                                    }
+                                )
+                            }
                         }
                     }
                 )
@@ -196,6 +219,18 @@ fun App() {
             )
         }
     }
+}
+
+@Composable
+private fun LockToggleItem(
+    label: String,
+    locked: Boolean,
+    onToggle: () -> Unit
+) {
+    DropdownMenuItem(
+        text = { Text(if (locked) "$label ✓" else label) },
+        onClick = onToggle
+    )
 }
 
 @Composable

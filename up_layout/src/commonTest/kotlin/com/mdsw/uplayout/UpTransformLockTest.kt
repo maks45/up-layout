@@ -26,4 +26,21 @@ class UpTransformLockTest {
         assertEquals(UpTransformMode.SCALE, resolveTransformLock(1.1f, 4f))
         assertEquals(UpTransformMode.ROTATE, resolveTransformLock(1.04f, 12f))
     }
+
+    @Test
+    fun lockedModeNeverWins() {
+        assertNull(resolveTransformLock(1.05f, 1f, scaleLocked = true))
+        assertNull(resolveTransformLock(1.01f, 5f, rotationLocked = true))
+    }
+
+    @Test
+    fun fallsBackToUnlockedMode() {
+        assertEquals(UpTransformMode.ROTATE, resolveTransformLock(1.1f, 4f, scaleLocked = true))
+        assertEquals(UpTransformMode.SCALE, resolveTransformLock(1.04f, 12f, rotationLocked = true))
+    }
+
+    @Test
+    fun bothLockedStaysUndecided() {
+        assertNull(resolveTransformLock(1.5f, 45f, scaleLocked = true, rotationLocked = true))
+    }
 }
