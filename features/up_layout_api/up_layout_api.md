@@ -23,7 +23,7 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 - `isEditMode = true` -> `EditModeLayout`: dashed border, alignment grid, snap dot grid, gray item border, single-finger drag (`detectDragGestures` + `resolveDrop` on drag end), tap overlay (`onItemClick`). Container `modifier` gains edit affordances.
 - `isEditMode = false` -> `ViewModeLayout`: plain `Box`, same alignment/padding/size per item, no gestures or affordances, caller `modifier` passed through untouched.
-- Demo toggles the flag via the overflow menu item in `shared/.../App.kt`: "Edit layout" when in view mode, "Save" when editing.
+- Demo toggles the flag via the overflow menu item in `shared/.../App.kt`: "Edit layout" when in view mode, "Save" when editing. The flag uses `rememberSaveable`, so the mode survives configuration changes (e.g. rotation).
 
 ## Frame model
 

@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +42,7 @@ import userpositionedlayout.shared.generated.resources.save_layout
 fun App() {
     MaterialTheme {
         var menuExpanded by remember { mutableStateOf(false) }
-        var isEditMode by remember { mutableStateOf(true) }
+        var isEditMode by rememberSaveable { mutableStateOf(true) }
         Scaffold(
             topBar = {
                 TopAppBar(
