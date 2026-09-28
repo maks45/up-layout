@@ -21,7 +21,7 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 ## Edit / view mode contract
 
-- `isEditMode = true` -> `EditModeLayout`: dashed border, alignment grid, snap dot grid, gray item border, single-finger drag (`detectDragGestures` + `resolveDrop` on drag end), tap overlay (`onItemClick`). Container `modifier` gains edit affordances.
+- `isEditMode = true` -> `EditModeLayout`: dashed border, alignment grid, snap dot grid, selection frames (unselected thin dashed gray, selected solid primary 2.dp, none selected by default; tap/drag/pinch selects, tap on empty area clears), single-finger drag (`detectDragGestures` + `resolveDrop` on drag end), two-finger pinch scale on touched item (`resolveScaledSize` -> `widthDp`/`heightDp`), tap overlay (`onItemClick`). Container `modifier` gains edit affordances. See `features/selection_scaling/selection_scaling.md`.
 - `isEditMode = false` -> `ViewModeLayout`: plain `Box`, same alignment/padding/size per item, no gestures or affordances, caller `modifier` passed through untouched.
 - Demo toggles the flag via the overflow menu item in `shared/.../App.kt`: "Edit layout" when in view mode, "Save" when editing. The flag uses `rememberSaveable`, so the mode survives configuration changes (e.g. rotation).
 
@@ -47,5 +47,5 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 ## Verification
 
-- `./gradlew :up_layout:check :shared:testAndroidHostTest` — pure `resolveDrop` math plus host tests pass.
+- `./gradlew :up_layout:check :shared:testAndroidHostTest` — pure `resolveDrop` + `resolveScaledSize` math plus host tests pass.
 - Manual: toggle edit mode, drag both boxes, confirm drop persists alignment + padding and view mode renders same positions without grids/borders.

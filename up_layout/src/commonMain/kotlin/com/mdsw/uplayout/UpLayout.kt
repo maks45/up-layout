@@ -3,7 +3,11 @@ package com.mdsw.uplayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.height
@@ -16,8 +20,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -115,6 +121,11 @@ private fun EditModeLayout(
 ) {
     val density = LocalDensity.current
     val containerSize = remember { mutableStateOf(IntSize.Zero) }
+    var selectedId by remember { mutableStateOf<String?>(null) }
+    val primary = MaterialTheme.colorScheme.primary
+    val childSizes = remember { mutableStateMapOf<String, IntSize>() }
+    val latestItems by rememberUpdatedState(items)
+    val latestOnItemChanged by rememberUpdatedState(onItemChanged)
 
     Box(
         modifier = modifier
@@ -125,20 +136,86 @@ private fun EditModeLayout(
                 dotSpacing = grid.visibleGridSize.dp,
                 showGrid = grid.showGrid
             )
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = { selectedId = null })
+            }
+            .pointerInput(Unit) {
+                // Container-level pinch: both fingers must reach the same handler.
+                // Per-item handlers miss the gesture when the second finger lands
+                // outside the item bounds, so scale the currently selected item here.
+                // Single-finger events are NOT consumed to keep drag/tap working.
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false)
+                    do {
+                        val event = awaitPointerEvent()
+                        if (event.changes.count { it.pressed } >= 2) {
+                            val zoom = event.calculateZoom()
+                            val currentSelectedId = selectedId
+                            if (zoom != 1f && currentSelectedId != null) {
+                                val current =
+                                    latestItems.firstOrNull { it.id == currentSelectedId }
+                                if (current != null) {
+                                    val sizePx = childSizes[current.id] ?: IntSize.Zero
+                                    val densityVal = density.density
+                                    val fallbackW = if (sizePx.width > 0) {
+                                        sizePx.width / densityVal -
+                                            (current.padding.start + current.padding.end)
+                                    } else {
+                                        current.widthDp?.toFloat() ?: 100f
+                                    }
+                                    val fallbackH = if (sizePx.height > 0) {
+                                        sizePx.height / densityVal -
+                                            (current.padding.top + current.padding.bottom)
+                                    } else {
+                                        current.heightDp?.toFloat() ?: 100f
+                                    }
+                                    val (newW, newH) = resolveScaledSize(
+                                        currentWidthDp = current.widthDp,
+                                        currentHeightDp = current.heightDp,
+                                        fallbackWidthDp = fallbackW,
+                                        fallbackHeightDp = fallbackH,
+                                        zoom = zoom
+                                    )
+                                    latestOnItemChanged(
+                                        current.copy(widthDp = newW, heightDp = newH)
+                                    )
+                                }
+                            }
+                            event.changes.forEach { it.consume() }
+                        }
+                    } while (event.changes.any { it.pressed })
+                }
+            }
             .onGloballyPositioned { containerSize.value = it.size }
     ) {
         items.forEachIndexed { index, item ->
             val dragOffset = remember { mutableStateOf(IntOffset.Zero) }
             val childRect = remember { mutableStateOf(Rect.Zero) }
+            val latestItem by rememberUpdatedState(item)
+            val isSelected = selectedId == item.id
             key(item.id) {
                 Box(
                     modifier = Modifier
                         .align(item.alignment.toComposeAlignment())
                         .upItemBounds(item)
-                        .border(1.dp, color = Color.Gray)
+                        .then(
+                            if (isSelected) Modifier.border(2.dp, primary)
+                            else Modifier.dashedItemBorder(Color.Gray)
+                        )
                         .offset { dragOffset.value }
                         .pointerInput(Unit) {
+                            // Select on press (no consume) so a direct two-finger
+                            // pinch selects on first down before container scales.
+                            awaitEachGesture {
+                                awaitFirstDown(requireUnconsumed = false)
+                                selectedId = latestItem.id
+                            }
+                        }
+                        .pointerInput(Unit) {
                             detectDragGestures(
+                                onDragStart = {
+                                    selectedId = latestItem.id
+                                },
                                 onDragEnd = {
                                     val size = containerSize.value
                                     if (size.width > 0 && size.height > 0) {
@@ -155,8 +232,9 @@ private fun EditModeLayout(
                                             snapStepDp = grid.snapGridSize,
                                             snapToGrid = grid.snapToGrid
                                         )
-                                        onItemChanged(
-                                            item.copy(
+                                        val current = latestItem
+                                        latestOnItemChanged(
+                                            current.copy(
                                                 alignment = result.alignment,
                                                 padding = result.padding
                                             )
@@ -174,13 +252,17 @@ private fun EditModeLayout(
                         }
                         .onGloballyPositioned {
                             childRect.value = it.boundsInParent()
+                            childSizes[item.id] = it.size
                         }
                 ) {
                     content[index]()
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .clickable { onItemClick(item) }
+                            .clickable {
+                                selectedId = item.id
+                                onItemClick(item)
+                            }
                     )
                 }
             }
@@ -220,6 +302,16 @@ private fun Modifier.dashedBorder(color: Color) = this.drawBehind {
         color = color,
         style = Stroke(
             width = 2f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+        )
+    )
+}
+
+private fun Modifier.dashedItemBorder(color: Color, width: Dp = 1.dp) = this.drawBehind {
+    drawRect(
+        color = color,
+        style = Stroke(
+            width = width.toPx(),
             pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
         )
     )
