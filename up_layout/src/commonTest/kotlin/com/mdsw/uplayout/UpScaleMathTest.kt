@@ -29,4 +29,14 @@ class UpScaleMathTest {
     fun ignoresNonPositiveZoom() {
         assertEquals(Pair(240, 140), resolveScaledSize(240, 140, 240f, 140f, 0f))
     }
+
+    @Test
+    fun snapsScaledSizeToStep() {
+        assertEquals(Pair(212, 124), resolveScaledSize(210, 122, 210f, 122f, 1.01f, stepDp = 4))
+    }
+
+    @Test
+    fun stepRespectsMinSize() {
+        assertEquals(Pair(32, 32), resolveScaledSize(40, 40, 40f, 40f, 0.5f, stepDp = 4))
+    }
 }

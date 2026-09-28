@@ -21,7 +21,7 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 ## Edit / view mode contract
 
-- `isEditMode = true` -> `EditModeLayout`: dashed border, alignment grid, snap dot grid, selection frames (unselected thin dashed gray, selected solid primary 2.dp, none selected by default; tap/drag/pinch selects, tap on empty area clears), single-finger drag (`detectDragGestures` + `resolveDrop` on drag end), two-finger pinch scale on touched item (`resolveScaledSize` -> `widthDp`/`heightDp`), tap overlay (`onItemClick`). Container `modifier` gains edit affordances. See `features/selection_scaling/selection_scaling.md`.
+- `isEditMode = true` -> `EditModeLayout`: dashed border, alignment grid, snap dot grid, selection frames (unselected thin dashed gray, selected solid primary 2.dp, none selected by default; tap/drag/press selects, tap on empty area clears), single-finger drag (`detectDragGestures` + `resolveDrop` on drag end), container-level two-finger pinch scale (`resolveScaledSize` -> `widthDp`/`heightDp`) + twist rotate (`resolveRotationDegrees` -> `rotationDegrees`) on the selected item with first-intention lock per interaction (`resolveTransformLock`), tap overlay (`onItemClick`). Container `modifier` gains edit affordances. See `features/selection_scaling/selection_scaling.md` and `features/rotation/rotation.md`.
 - `isEditMode = false` -> `ViewModeLayout`: plain `Box`, same alignment/padding/size per item, no gestures or affordances, caller `modifier` passed through untouched.
 - Demo toggles the flag via the overflow menu item in `shared/.../App.kt`: "Edit layout" when in view mode, "Save" when editing. The flag uses `rememberSaveable`, so the mode survives configuration changes (e.g. rotation).
 
@@ -31,7 +31,8 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 - `UpItem` is the per-frame class: element `id`, `padding` values, size (`widthDp` / `heightDp`), `rotationDegrees`, and `alignment`.
 - `UpScreenConfig` is the screen configuration: holds all frames in `frames: List<UpItem>`.
-- Rotation renders via `Modifier.rotate()` in the shared `upItemBounds` mapping, so edit and view mode stay consistent. Rotate gesture/handle is still future work.
+- `UpGridSettings` is the edit configuration: `showGrid`, `snapToGrid`, move step `snapGridSize = 20`, `visibleGridSize`, rotation step `rotationStepDegrees = 4f`, scale step `scaleStepDp = 4`. See `features/edit_steps/edit_steps.md`.
+- Rotation renders via `Modifier.rotate()` in the shared `upItemBounds` mapping, so edit and view mode stay consistent.
 
 ## Persistence
 
@@ -42,10 +43,10 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 ## Demo wiring
 
-- `shared/.../App.kt` holds an `UpScreenConfig` state and passes `config.frames` plus `configStore = rememberUpScreenConfigStore()` to `com.mdsw.uplayout.UpLayout` (two `240x140` dp frames) with `content = listOf({ Text("Drag me (a)") }, { Text("Drag me (b)") })`. Drag positions survive app restart.
+- `shared/.../App.kt` holds an `UpScreenConfig` state and passes `config.frames` plus `configStore = rememberUpScreenConfigStore()` to `com.mdsw.uplayout.UpLayout` (two `240x140` dp frames) with `content = listOf({ Text("Drag me (a)") }, { Text("Drag me (b)") })`. Drag positions survive app restart. Edit mode also holds `UpGridSettings` state and passes it as `grid`; the bottom bar exposes move/rotate/scale step values with `-`/`+` controls.
 - Demo texts fill their box (`fillMaxSize`) and autoscale to the largest fitting font (`TextAutoSize.StepBased()`, single line, centered).
 
 ## Verification
 
-- `./gradlew :up_layout:check :shared:testAndroidHostTest` — pure `resolveDrop` + `resolveScaledSize` math plus host tests pass.
+- `./gradlew :up_layout:check :shared:testAndroidHostTest` — pure `resolveDrop` + `resolveScaledSize` + `resolveRotationDegrees` + `resolveTransformLock` math plus host tests pass.
 - Manual: toggle edit mode, drag both boxes, confirm drop persists alignment + padding and view mode renders same positions without grids/borders.

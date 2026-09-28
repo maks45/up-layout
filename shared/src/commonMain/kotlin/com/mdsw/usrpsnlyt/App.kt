@@ -1,7 +1,11 @@
 package com.mdsw.usrpsnlyt
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -15,7 +19,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mdsw.uplayout.UpAlignment
+import com.mdsw.uplayout.UpGridSettings
 import com.mdsw.uplayout.UpItem
 import com.mdsw.uplayout.UpLayout
 import com.mdsw.uplayout.UpPadding
@@ -43,6 +50,7 @@ fun App() {
     MaterialTheme {
         var menuExpanded by remember { mutableStateOf(false) }
         var isEditMode by rememberSaveable { mutableStateOf(true) }
+        var gridSettings by remember { mutableStateOf(UpGridSettings()) }
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -71,6 +79,59 @@ fun App() {
                         }
                     }
                 )
+            },
+            bottomBar = {
+                if (isEditMode) {
+                    Surface {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StepControl(
+                                label = "Move",
+                                value = "${gridSettings.snapGridSize}",
+                                onMinus = {
+                                    gridSettings = gridSettings.copy(
+                                        snapGridSize = (gridSettings.snapGridSize - 1).coerceAtLeast(1)
+                                    )
+                                },
+                                onPlus = {
+                                    gridSettings = gridSettings.copy(
+                                        snapGridSize = gridSettings.snapGridSize + 1
+                                    )
+                                }
+                            )
+                            StepControl(
+                                label = "Rotate",
+                                value = "${gridSettings.rotationStepDegrees}",
+                                onMinus = {
+                                    gridSettings = gridSettings.copy(
+                                        rotationStepDegrees = (gridSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
+                                    )
+                                },
+                                onPlus = {
+                                    gridSettings = gridSettings.copy(
+                                        rotationStepDegrees = gridSettings.rotationStepDegrees + 1f
+                                    )
+                                }
+                            )
+                            StepControl(
+                                label = "Scale",
+                                value = "${gridSettings.scaleStepDp}",
+                                onMinus = {
+                                    gridSettings = gridSettings.copy(
+                                        scaleStepDp = (gridSettings.scaleStepDp - 1).coerceAtLeast(1)
+                                    )
+                                },
+                                onPlus = {
+                                    gridSettings = gridSettings.copy(
+                                        scaleStepDp = gridSettings.scaleStepDp + 1
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             }
         ) { innerPadding ->
             var config by remember {
@@ -103,6 +164,7 @@ fun App() {
                     )
                 },
                 isEditMode = isEditMode,
+                grid = gridSettings,
                 configStore = rememberUpScreenConfigStore(),
                 modifier = Modifier
                     .padding(innerPadding)
@@ -132,6 +194,23 @@ fun App() {
                     }
                 )
             )
+        }
+    }
+}
+
+@Composable
+private fun StepControl(
+    label: String,
+    value: String,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(label)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = onMinus) { Text("-") }
+            Text(value)
+            TextButton(onClick = onPlus) { Text("+") }
         }
     }
 }

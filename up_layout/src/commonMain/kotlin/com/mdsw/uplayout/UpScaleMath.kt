@@ -8,14 +8,19 @@ fun resolveScaledSize(
     fallbackWidthDp: Float,
     fallbackHeightDp: Float,
     zoom: Float,
-    minSizeDp: Int = 32
+    minSizeDp: Int = 32,
+    stepDp: Int = 0
 ): Pair<Int, Int> {
     val baseWidth = (currentWidthDp?.toFloat() ?: fallbackWidthDp).coerceAtLeast(minSizeDp.toFloat())
     val baseHeight = (currentHeightDp?.toFloat() ?: fallbackHeightDp).coerceAtLeast(minSizeDp.toFloat())
     if (zoom <= 0f || zoom == 1f) {
         return Pair(baseWidth.toInt(), baseHeight.toInt())
     }
-    val newWidth = (baseWidth * zoom).toInt().coerceAtLeast(minSizeDp)
-    val newHeight = (baseHeight * zoom).toInt().coerceAtLeast(minSizeDp)
+    var newWidth = (baseWidth * zoom).toInt().coerceAtLeast(minSizeDp)
+    var newHeight = (baseHeight * zoom).toInt().coerceAtLeast(minSizeDp)
+    if (stepDp > 1) {
+        newWidth = roundToStep(newWidth, stepDp).coerceAtLeast(minSizeDp)
+        newHeight = roundToStep(newHeight, stepDp).coerceAtLeast(minSizeDp)
+    }
     return Pair(newWidth, newHeight)
 }

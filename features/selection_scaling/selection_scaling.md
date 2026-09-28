@@ -32,7 +32,7 @@ Add selection state to edit mode in `UpLayout`:
 - New pure math `up_layout/src/commonMain/kotlin/com/mdsw/uplayout/UpScaleMath.kt`:
   - `resolveScaledSize(currentWidthDp, currentHeightDp, fallbackWidthDp, fallbackHeightDp, zoom, minSizeDp = 32)`.
   - Scales width/height uniformly by `zoom`, falls back to measured content size when `widthDp`/`heightDp` is null, clamps to `minSizeDp`, ignores `zoom <= 0`.
-- Gesture: container-level `pointerInput` uses `awaitEachGesture { awaitFirstDown(requireUnconsumed = false); ... }` + `calculateZoom()`:
+- Gesture: container-level `pointerInput` uses `awaitEachGesture { awaitFirstDown(requireUnconsumed = false); ... }` + `calculateZoom()` (+ `calculateRotation()` for twist, first-intention lock per interaction via `resolveTransformLock`, see `features/rotation/rotation.md`):
   - Per-item pinch missed on real devices when the second finger lands outside the small item bounds, so the container handles the gesture and scales the selected item (pinch anywhere scales the selection).
   - Only acts when `>= 2` pointers pressed and never consumes single-finger events, so item `detectDragGestures` drag and tap overlay keep working.
   - Each zoom delta calls `onItemChanged(item.copy(widthDp, heightDp))` for live resize; drag drop (`resolveDrop`) is unchanged.

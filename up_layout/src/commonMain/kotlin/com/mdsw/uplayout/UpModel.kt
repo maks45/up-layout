@@ -42,5 +42,7 @@ data class UpGridSettings(
     val showGrid: Boolean = true,
     val snapToGrid: Boolean = true,
     val snapGridSize: Int = 20,
-    val visibleGridSize: Int = 40
+    val visibleGridSize: Int = 40,
+    val rotationStepDegrees: Float = 4f,
+    val scaleStepDp: Int = 4
 )
