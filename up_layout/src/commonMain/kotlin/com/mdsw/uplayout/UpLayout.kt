@@ -12,12 +12,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -33,7 +37,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun UserPositionedLayout(
+fun UpLayout(
     items: List<UpItem>,
     onItemChanged: (UpItem) -> Unit,
     modifier: Modifier = Modifier,
@@ -41,8 +45,26 @@ fun UserPositionedLayout(
     alignmentCenter: Dp = 20.dp,
     isEditMode: Boolean = true,
     onItemClick: (UpItem) -> Unit = {},
-    itemContent: @Composable BoxScope.(UpItem) -> Unit
+    configStore: UpScreenConfigStore? = null,
+    content: List<@Composable BoxScope.() -> Unit>
 ) {
+    require(items.size == content.size) {
+        "UpLayout: items and content must have the same size, got ${items.size} items and ${content.size} contents"
+    }
+    var restoreDone by remember(configStore) { mutableStateOf(configStore == null) }
+    LaunchedEffect(configStore) {
+        val store = configStore ?: return@LaunchedEffect
+        val saved = store.load()
+        if (saved.frames.isNotEmpty()) {
+            saved.frames.forEach(onItemChanged)
+        }
+        restoreDone = true
+    }
+    LaunchedEffect(items, restoreDone) {
+        if (restoreDone) {
+            configStore?.save(UpScreenConfig(items))
+        }
+    }
     if (isEditMode) {
         EditModeLayout(
             items = items,
@@ -51,13 +73,13 @@ fun UserPositionedLayout(
             grid = grid,
             alignmentCenter = alignmentCenter,
             onItemClick = onItemClick,
-            itemContent = itemContent
+            content = content
         )
     } else {
         ViewModeLayout(
             items = items,
             modifier = modifier,
-            itemContent = itemContent
+            content = content
         )
     }
 }
@@ -66,16 +88,16 @@ fun UserPositionedLayout(
 private fun ViewModeLayout(
     items: List<UpItem>,
     modifier: Modifier = Modifier,
-    itemContent: @Composable BoxScope.(UpItem) -> Unit
+    content: List<@Composable BoxScope.() -> Unit>
 ) {
     Box(modifier = modifier) {
-        items.forEach { item ->
+        items.forEachIndexed { index, item ->
             Box(
                 modifier = Modifier
                     .align(item.alignment.toComposeAlignment())
                     .upItemBounds(item)
             ) {
-                itemContent(item)
+                content[index]()
             }
         }
     }
@@ -89,7 +111,7 @@ private fun EditModeLayout(
     grid: UpGridSettings = UpGridSettings(),
     alignmentCenter: Dp = 20.dp,
     onItemClick: (UpItem) -> Unit = {},
-    itemContent: @Composable BoxScope.(UpItem) -> Unit
+    content: List<@Composable BoxScope.() -> Unit>
 ) {
     val density = LocalDensity.current
     val containerSize = remember { mutableStateOf(IntSize.Zero) }
@@ -105,10 +127,10 @@ private fun EditModeLayout(
             )
             .onGloballyPositioned { containerSize.value = it.size }
     ) {
-        items.forEach { item ->
+        items.forEachIndexed { index, item ->
             val dragOffset = remember { mutableStateOf(IntOffset.Zero) }
             val childRect = remember { mutableStateOf(Rect.Zero) }
-            key(item) {
+            key(item.id) {
                 Box(
                     modifier = Modifier
                         .align(item.alignment.toComposeAlignment())
@@ -154,7 +176,7 @@ private fun EditModeLayout(
                             childRect.value = it.boundsInParent()
                         }
                 ) {
-                    itemContent(item)
+                    content[index]()
                     Box(
                         modifier = Modifier
                             .matchParentSize()
@@ -176,6 +198,7 @@ private fun Modifier.upItemBounds(item: UpItem): Modifier {
         )
         .then(if (item.widthDp != null) Modifier.width(item.widthDp.dp) else Modifier)
         .then(if (item.heightDp != null) Modifier.height(item.heightDp.dp) else Modifier)
+        .rotate(item.rotationDegrees)
 }
 
 private fun UpAlignment.toComposeAlignment(): Alignment {

@@ -2,4 +2,5 @@
 <resources>
     <string name="app_name">Demo app</string>
     <string name="edit_layout">Edit layout</string>
+    <string name="save_layout">Save</string>
 </resources>
