@@ -70,8 +70,13 @@ internal fun Modifier.dashedItemBorder(color: Color, width: Dp = 1.dp) = this.dr
     )
 }
 
-internal fun Modifier.drawAlignmentGrid(color: Color, centerSize: Dp) =
-    this.drawBehind {
+internal fun Modifier.drawAlignmentGrid(
+    color: Color,
+    centerSize: Dp,
+    showAlignmentGrid: Boolean = true
+) =
+    if (!showAlignmentGrid) this
+    else this.drawBehind {
         val horizontalDistance = size.width / 2f - centerSize.toPx() / 2
         val verticalDistance = size.height / 2f - centerSize.toPx() / 2
 

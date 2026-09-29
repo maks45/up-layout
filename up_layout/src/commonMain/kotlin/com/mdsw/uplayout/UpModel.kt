@@ -46,7 +46,9 @@ data class UpScreenConfig(
 /** Edit-mode configuration: grid rendering, snapping steps and transform locks. */
 data class UpEditSettings(
     val showGrid: Boolean = true,
+    val showAlignmentGrid: Boolean = true,
     val showSnapGuides: Boolean = true,
+    val showFrameBounds: Boolean = true,
     val snapToGrid: Boolean = true,
     val snapStepDp: Int = 20,
     val visibleStepDp: Int = 40,

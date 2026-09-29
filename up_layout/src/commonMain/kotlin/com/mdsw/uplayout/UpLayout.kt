@@ -130,7 +130,11 @@ private fun EditModeLayout(
         modifier = modifier
             .background(color = MaterialTheme.colorScheme.background)
             .dashedBorder(MaterialTheme.colorScheme.primary)
-            .drawAlignmentGrid(MaterialTheme.colorScheme.primary, centerDeadZone)
+            .drawAlignmentGrid(
+                MaterialTheme.colorScheme.primary,
+                centerDeadZone,
+                settings.showAlignmentGrid
+            )
             .drawSnapGrid(
                 dotSpacing = settings.visibleStepDp.dp,
                 showGrid = settings.showGrid
@@ -226,7 +230,8 @@ private fun EditModeLayout(
                 Box(
                     modifier = upPlacedItem(item)
                         .then(
-                            if (isSelected) Modifier.border(2.dp, primary)
+                            if (!settings.showFrameBounds) Modifier
+                            else if (isSelected) Modifier.border(2.dp, primary)
                             else Modifier.dashedItemBorder(Color.Gray)
                         )
                         .offset { dragOffset.value }

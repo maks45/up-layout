@@ -48,6 +48,11 @@ import userpositionedlayout.shared.generated.resources.edit_layout
 import userpositionedlayout.shared.generated.resources.lock_move
 import userpositionedlayout.shared.generated.resources.lock_rotation
 import userpositionedlayout.shared.generated.resources.lock_scale
+import userpositionedlayout.shared.generated.resources.show_alignment_grid
+import userpositionedlayout.shared.generated.resources.show_frame_bounds
+import userpositionedlayout.shared.generated.resources.show_grid
+import userpositionedlayout.shared.generated.resources.show_snap_guides
+import userpositionedlayout.shared.generated.resources.snap_to_grid
 import userpositionedlayout.shared.generated.resources.step_move
 import userpositionedlayout.shared.generated.resources.step_rotate
 import userpositionedlayout.shared.generated.resources.step_scale
@@ -89,23 +94,61 @@ fun App(persistLayout: Boolean = true) {
                                 }
                             )
                             if (isEditMode) {
-                                LockToggleItem(
+                                ToggleMenuItem(
+                                    label = stringResource(Res.string.show_grid),
+                                    checked = editSettings.showGrid,
+                                    onToggle = {
+                                        editSettings = editSettings.copy(showGrid = !editSettings.showGrid)
+                                    }
+                                )
+                                ToggleMenuItem(
+                                    label = stringResource(Res.string.show_alignment_grid),
+                                    checked = editSettings.showAlignmentGrid,
+                                    onToggle = {
+                                        editSettings =
+                                            editSettings.copy(showAlignmentGrid = !editSettings.showAlignmentGrid)
+                                    }
+                                )
+                                ToggleMenuItem(
+                                    label = stringResource(Res.string.show_snap_guides),
+                                    checked = editSettings.showSnapGuides,
+                                    onToggle = {
+                                        editSettings =
+                                            editSettings.copy(showSnapGuides = !editSettings.showSnapGuides)
+                                    }
+                                )
+                                ToggleMenuItem(
+                                    label = stringResource(Res.string.show_frame_bounds),
+                                    checked = editSettings.showFrameBounds,
+                                    onToggle = {
+                                        editSettings =
+                                            editSettings.copy(showFrameBounds = !editSettings.showFrameBounds)
+                                    }
+                                )
+                                ToggleMenuItem(
+                                    label = stringResource(Res.string.snap_to_grid),
+                                    checked = editSettings.snapToGrid,
+                                    onToggle = {
+                                        editSettings = editSettings.copy(snapToGrid = !editSettings.snapToGrid)
+                                    }
+                                )
+                                ToggleMenuItem(
                                     label = stringResource(Res.string.lock_move),
-                                    locked = editSettings.lockMove,
+                                    checked = editSettings.lockMove,
                                     onToggle = {
                                         editSettings = editSettings.copy(lockMove = !editSettings.lockMove)
                                     }
                                 )
-                                LockToggleItem(
+                                ToggleMenuItem(
                                     label = stringResource(Res.string.lock_rotation),
-                                    locked = editSettings.lockRotation,
+                                    checked = editSettings.lockRotation,
                                     onToggle = {
                                         editSettings = editSettings.copy(lockRotation = !editSettings.lockRotation)
                                     }
                                 )
-                                LockToggleItem(
+                                ToggleMenuItem(
                                     label = stringResource(Res.string.lock_scale),
-                                    locked = editSettings.lockScale,
+                                    checked = editSettings.lockScale,
                                     onToggle = {
                                         editSettings = editSettings.copy(lockScale = !editSettings.lockScale)
                                     }
@@ -234,16 +277,16 @@ fun App(persistLayout: Boolean = true) {
 }
 
 @Composable
-private fun LockToggleItem(
+private fun ToggleMenuItem(
     label: String,
-    locked: Boolean,
+    checked: Boolean,
     onToggle: () -> Unit
 ) {
     DropdownMenuItem(
         text = { Text(label) },
         leadingIcon = {
             Checkbox(
-                checked = locked,
+                checked = checked,
                 onCheckedChange = null
             )
         },
