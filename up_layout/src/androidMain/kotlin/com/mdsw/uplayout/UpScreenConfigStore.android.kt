@@ -11,11 +11,11 @@ import kotlinx.coroutines.withContext
 actual fun rememberUpScreenConfigStore(fileName: String): UpScreenConfigStore {
     val context = LocalContext.current
     return remember(fileName) {
-        FileUpScreenConfigStore(File(context.filesDir, fileName))
+        AndroidUpScreenConfigStore(File(context.filesDir, fileName))
     }
 }
 
-internal class FileUpScreenConfigStore(private val file: File) : UpScreenConfigStore {
+internal class AndroidUpScreenConfigStore(private val file: File) : UpScreenConfigStore {
     override suspend fun save(config: UpScreenConfig) {
         withContext(Dispatchers.IO) {
             file.writeText(encodeConfig(config))

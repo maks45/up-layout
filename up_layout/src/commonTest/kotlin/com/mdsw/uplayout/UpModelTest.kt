@@ -6,13 +6,13 @@ import kotlin.test.assertEquals
 class UpModelTest {
 
     @Test
-    fun frameDefaultsToZeroRotation() {
+    fun itemDefaultsToZeroRotation() {
         val item = UpItem(id = "a")
         assertEquals(0f, item.rotationDegrees)
     }
 
     @Test
-    fun frameKeepsIdPaddingSizeAlignmentAndRotation() {
+    fun itemKeepsIdPaddingSizeAlignmentAndRotation() {
         val item = UpItem(
             id = "a",
             alignment = UpAlignment.START_TOP,
@@ -30,19 +30,19 @@ class UpModelTest {
     }
 
     @Test
-    fun screenConfigHoldsAllFrames() {
+    fun screenConfigHoldsAllItems() {
         val config = UpScreenConfig(
-            frames = listOf(
+            items = listOf(
                 UpItem(id = "a"),
                 UpItem(id = "b", rotationDegrees = 90f)
             )
         )
-        assertEquals(listOf("a", "b"), config.frames.map { it.id })
-        assertEquals(90f, config.frames[1].rotationDegrees)
+        assertEquals(listOf("a", "b"), config.items.map { it.id })
+        assertEquals(90f, config.items[1].rotationDegrees)
     }
 
     @Test
     fun screenConfigDefaultsToEmpty() {
-        assertEquals(emptyList(), UpScreenConfig().frames)
+        assertEquals(emptyList(), UpScreenConfig().items)
     }
 }

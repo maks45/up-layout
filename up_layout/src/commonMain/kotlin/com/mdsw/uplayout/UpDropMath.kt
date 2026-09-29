@@ -5,12 +5,21 @@ data class UpDropResult(
     val padding: UpPadding
 )
 
-fun roundToStep(value: Int, step: Int): Int {
+/** Rounds [value] to the nearest multiple of [step]. Returns [value] when step <= 0. */
+fun roundIntToStep(value: Int, step: Int): Int {
+    if (step <= 0) return value
     return (value + step / 2) / step * step
 }
 
+@Deprecated(
+    "Use roundIntToStep (renamed to avoid confusion with domain steps).",
+    ReplaceWith("roundIntToStep(value, step)", "com.mdsw.uplayout.roundIntToStep")
+)
+fun roundToStep(value: Int, step: Int): Int = roundIntToStep(value, step)
+
 // Pure port of IACreator's updateAlignmentAndPadding. All values are dp,
 // child bounds are in container coordinates. No Compose types involved.
+// centerDeadZoneDp is the full width/height of the CENTER snapping band.
 fun resolveDrop(
     containerWidthDp: Float,
     containerHeightDp: Float,
@@ -18,11 +27,11 @@ fun resolveDrop(
     childTopDp: Float,
     childRightDp: Float,
     childBottomDp: Float,
-    alignmentCenterDp: Float = 20f,
+    centerDeadZoneDp: Float = 20f,
     snapStepDp: Int = 20,
     snapToGrid: Boolean = true
 ): UpDropResult {
-    val half = alignmentCenterDp / 2f
+    val half = centerDeadZoneDp / 2f
     val hCenter = containerWidthDp / 2f
     val vCenter = containerHeightDp / 2f
     val centerX = (childLeftDp + childRightDp) / 2f
@@ -51,7 +60,7 @@ fun resolveDrop(
 
     fun snapped(value: Float): Int {
         val intValue = value.coerceAtLeast(0f).toInt()
-        return if (snapToGrid) roundToStep(intValue, snapStepDp) else intValue
+        return if (snapToGrid) roundIntToStep(intValue, snapStepDp) else intValue
     }
     val top = snapped(childTopDp)
     val bottom = snapped(containerHeightDp - childBottomDp)

@@ -14,6 +14,10 @@ enum class UpTransformMode {
 // A locked mode never passes its threshold, so it can never win: with one lock
 // the gesture falls back to the other mode once it passes, with both locks the
 // result stays null. Defaults are unlocked so existing callers keep working.
+/**
+ * First-intention lock for a two-finger gesture. Returns the winning
+ * [UpTransformMode], or null while undecided / when both modes are locked.
+ */
 fun resolveTransformLock(
     accumZoomFactor: Float,
     accumRotationDegrees: Float,

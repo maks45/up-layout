@@ -4,6 +4,10 @@ import kotlin.math.round
 
 // Pure rotation math for two-finger twist. Degrees, normalized to [0, 360).
 // When stepDegrees > 0 the result snaps to the nearest step multiple.
+/**
+ * Returns [currentDegrees] plus [deltaDegrees], normalized to [0, 360).
+ * @param stepDegrees when > 0, snaps the result to the nearest step multiple.
+ */
 fun resolveRotationDegrees(
     currentDegrees: Float,
     deltaDegrees: Float,

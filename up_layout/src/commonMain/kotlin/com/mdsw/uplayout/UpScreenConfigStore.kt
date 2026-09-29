@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 
 const val DEFAULT_UP_SCREEN_CONFIG_FILE = "up_screen_config.json"
 
+/** Persists the screen config across restarts. */
 interface UpScreenConfigStore {
     suspend fun save(config: UpScreenConfig)
     suspend fun load(): UpScreenConfig

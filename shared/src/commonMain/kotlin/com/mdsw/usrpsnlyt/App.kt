@@ -10,8 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,32 +24,45 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mdsw.uplayout.UpAlignment
-import com.mdsw.uplayout.UpGridSettings
+import com.mdsw.uplayout.UpEditSettings
 import com.mdsw.uplayout.UpItem
 import com.mdsw.uplayout.UpLayout
 import com.mdsw.uplayout.UpPadding
 import com.mdsw.uplayout.UpScreenConfig
+import com.mdsw.uplayout.UpScreenConfigStore
 import com.mdsw.uplayout.rememberUpScreenConfigStore
 import org.jetbrains.compose.resources.stringResource
 
 import userpositionedlayout.shared.generated.resources.Res
 import userpositionedlayout.shared.generated.resources.app_name
+import userpositionedlayout.shared.generated.resources.drag_me_a
+import userpositionedlayout.shared.generated.resources.drag_me_b
 import userpositionedlayout.shared.generated.resources.edit_layout
-import userpositionedlayout.shared.generated.resources.save_layout
+import userpositionedlayout.shared.generated.resources.lock_move
+import userpositionedlayout.shared.generated.resources.lock_rotation
+import userpositionedlayout.shared.generated.resources.lock_scale
+import userpositionedlayout.shared.generated.resources.step_move
+import userpositionedlayout.shared.generated.resources.step_rotate
+import userpositionedlayout.shared.generated.resources.step_scale
+import userpositionedlayout.shared.generated.resources.view_layout
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun App() {
+fun App(persistLayout: Boolean = true) {
     MaterialTheme {
         var menuExpanded by remember { mutableStateOf(false) }
         var isEditMode by rememberSaveable { mutableStateOf(true) }
-        var gridSettings by remember { mutableStateOf(UpGridSettings()) }
+        var editSettings by remember { mutableStateOf(UpEditSettings()) }
+        val configStore: UpScreenConfigStore? =
+            if (persistLayout) rememberUpScreenConfigStore() else null
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -67,7 +79,7 @@ fun App() {
                                 text = {
                                     Text(
                                         stringResource(
-                                            if (isEditMode) Res.string.save_layout else Res.string.edit_layout
+                                            if (isEditMode) Res.string.view_layout else Res.string.edit_layout
                                         )
                                     )
                                 },
@@ -78,24 +90,24 @@ fun App() {
                             )
                             if (isEditMode) {
                                 LockToggleItem(
-                                    label = "Lock move",
-                                    locked = gridSettings.lockMove,
+                                    label = stringResource(Res.string.lock_move),
+                                    locked = editSettings.lockMove,
                                     onToggle = {
-                                        gridSettings = gridSettings.copy(lockMove = !gridSettings.lockMove)
+                                        editSettings = editSettings.copy(lockMove = !editSettings.lockMove)
                                     }
                                 )
                                 LockToggleItem(
-                                    label = "Lock rotation",
-                                    locked = gridSettings.lockRotation,
+                                    label = stringResource(Res.string.lock_rotation),
+                                    locked = editSettings.lockRotation,
                                     onToggle = {
-                                        gridSettings = gridSettings.copy(lockRotation = !gridSettings.lockRotation)
+                                        editSettings = editSettings.copy(lockRotation = !editSettings.lockRotation)
                                     }
                                 )
                                 LockToggleItem(
-                                    label = "Lock scale",
-                                    locked = gridSettings.lockScale,
+                                    label = stringResource(Res.string.lock_scale),
+                                    locked = editSettings.lockScale,
                                     onToggle = {
-                                        gridSettings = gridSettings.copy(lockScale = !gridSettings.lockScale)
+                                        editSettings = editSettings.copy(lockScale = !editSettings.lockScale)
                                     }
                                 )
                             }
@@ -111,44 +123,44 @@ fun App() {
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
                             StepControl(
-                                label = "Move",
-                                value = "${gridSettings.snapGridSize}",
+                                label = stringResource(Res.string.step_move),
+                                value = editSettings.snapStepDp.toString(),
                                 onMinus = {
-                                    gridSettings = gridSettings.copy(
-                                        snapGridSize = (gridSettings.snapGridSize - 1).coerceAtLeast(1)
+                                    editSettings = editSettings.copy(
+                                        snapStepDp = (editSettings.snapStepDp - 1).coerceAtLeast(1)
                                     )
                                 },
                                 onPlus = {
-                                    gridSettings = gridSettings.copy(
-                                        snapGridSize = gridSettings.snapGridSize + 1
+                                    editSettings = editSettings.copy(
+                                        snapStepDp = editSettings.snapStepDp + 1
                                     )
                                 }
                             )
                             StepControl(
-                                label = "Rotate",
-                                value = "${gridSettings.rotationStepDegrees}",
+                                label = stringResource(Res.string.step_rotate),
+                                value = editSettings.rotationStepDegrees.toString(),
                                 onMinus = {
-                                    gridSettings = gridSettings.copy(
-                                        rotationStepDegrees = (gridSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
+                                    editSettings = editSettings.copy(
+                                        rotationStepDegrees = (editSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
                                     )
                                 },
                                 onPlus = {
-                                    gridSettings = gridSettings.copy(
-                                        rotationStepDegrees = gridSettings.rotationStepDegrees + 1f
+                                    editSettings = editSettings.copy(
+                                        rotationStepDegrees = editSettings.rotationStepDegrees + 1f
                                     )
                                 }
                             )
                             StepControl(
-                                label = "Scale",
-                                value = "${gridSettings.scaleStepDp}",
+                                label = stringResource(Res.string.step_scale),
+                                value = editSettings.scaleStepDp.toString(),
                                 onMinus = {
-                                    gridSettings = gridSettings.copy(
-                                        scaleStepDp = (gridSettings.scaleStepDp - 1).coerceAtLeast(1)
+                                    editSettings = editSettings.copy(
+                                        scaleStepDp = (editSettings.scaleStepDp - 1).coerceAtLeast(1)
                                     )
                                 },
                                 onPlus = {
-                                    gridSettings = gridSettings.copy(
-                                        scaleStepDp = gridSettings.scaleStepDp + 1
+                                    editSettings = editSettings.copy(
+                                        scaleStepDp = editSettings.scaleStepDp + 1
                                     )
                                 }
                             )
@@ -160,7 +172,7 @@ fun App() {
             var config by remember {
                 mutableStateOf(
                     UpScreenConfig(
-                        frames = listOf(
+                        items = listOf(
                             UpItem(
                                 id = "a",
                                 alignment = UpAlignment.START_TOP,
@@ -180,22 +192,22 @@ fun App() {
                 )
             }
             UpLayout(
-                items = config.frames,
+                items = config.items,
                 onItemChanged = { updated ->
                     config = config.copy(
-                        frames = config.frames.map { if (it.id == updated.id) updated else it }
+                        items = config.items.map { if (it.id == updated.id) updated else it }
                     )
                 },
                 isEditMode = isEditMode,
-                grid = gridSettings,
-                configStore = rememberUpScreenConfigStore(),
+                settings = editSettings,
+                configStore = configStore,
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize(),
                 content = listOf(
                     {
                         Text(
-                            text = "Drag me (a)",
+                            text = stringResource(Res.string.drag_me_a),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .wrapContentHeight(Alignment.CenterVertically),
@@ -206,7 +218,7 @@ fun App() {
                     },
                     {
                         Text(
-                            text = "Drag me (b)",
+                            text = stringResource(Res.string.drag_me_b),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .wrapContentHeight(Alignment.CenterVertically),
@@ -228,7 +240,13 @@ private fun LockToggleItem(
     onToggle: () -> Unit
 ) {
     DropdownMenuItem(
-        text = { Text(if (locked) "$label ✓" else label) },
+        text = { Text(label) },
+        leadingIcon = {
+            Checkbox(
+                checked = locked,
+                onCheckedChange = null
+            )
+        },
         onClick = onToggle
     )
 }

@@ -18,11 +18,11 @@ import platform.Foundation.writeToFile
 @Composable
 actual fun rememberUpScreenConfigStore(fileName: String): UpScreenConfigStore {
     return remember(fileName) {
-        FileUpScreenConfigStore(fileName)
+        IosUpScreenConfigStore(fileName)
     }
 }
 
-internal class FileUpScreenConfigStore(private val fileName: String) : UpScreenConfigStore {
+internal class IosUpScreenConfigStore(private val fileName: String) : UpScreenConfigStore {
     override suspend fun save(config: UpScreenConfig) {
         withContext(Dispatchers.Default) {
             NSString.create(string = encodeConfig(config))

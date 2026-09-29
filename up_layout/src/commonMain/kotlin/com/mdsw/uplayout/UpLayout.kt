@@ -1,21 +1,17 @@
 package com.mdsw.uplayout
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.calculateZoom
-import androidx.compose.foundation.gestures.calculateRotation
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateRotation
+import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,35 +20,32 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
+/**
+ * User-manipulable container. In edit mode children can be dragged, pinched to
+ * scale and twisted to rotate; in view mode items are placed read-only.
+ * Persist via [configStore]; pass null to disable. [content] parallels [items].
+ */
 @Composable
 fun UpLayout(
     items: List<UpItem>,
     onItemChanged: (UpItem) -> Unit,
     modifier: Modifier = Modifier,
-    grid: UpGridSettings = UpGridSettings(),
-    alignmentCenter: Dp = 20.dp,
+    settings: UpEditSettings = UpEditSettings(),
+    centerDeadZone: Dp = 20.dp,
     isEditMode: Boolean = true,
     onItemClick: (UpItem) -> Unit = {},
     configStore: UpScreenConfigStore? = null,
@@ -65,8 +58,8 @@ fun UpLayout(
     LaunchedEffect(configStore) {
         val store = configStore ?: return@LaunchedEffect
         val saved = store.load()
-        if (saved.frames.isNotEmpty()) {
-            saved.frames.forEach(onItemChanged)
+        if (saved.items.isNotEmpty()) {
+            saved.items.forEach(onItemChanged)
         }
         restoreDone = true
     }
@@ -80,8 +73,8 @@ fun UpLayout(
             items = items,
             onItemChanged = onItemChanged,
             modifier = modifier,
-            grid = grid,
-            alignmentCenter = alignmentCenter,
+            settings = settings,
+            centerDeadZone = centerDeadZone,
             onItemClick = onItemClick,
             content = content
         )
@@ -103,9 +96,7 @@ private fun ViewModeLayout(
     Box(modifier = modifier) {
         items.forEachIndexed { index, item ->
             Box(
-                modifier = Modifier
-                    .align(item.alignment.toComposeAlignment())
-                    .upItemBounds(item)
+                modifier = upPlacedItem(item)
             ) {
                 content[index]()
             }
@@ -118,8 +109,8 @@ private fun EditModeLayout(
     items: List<UpItem>,
     onItemChanged: (UpItem) -> Unit,
     modifier: Modifier = Modifier,
-    grid: UpGridSettings = UpGridSettings(),
-    alignmentCenter: Dp = 20.dp,
+    settings: UpEditSettings = UpEditSettings(),
+    centerDeadZone: Dp = 20.dp,
     onItemClick: (UpItem) -> Unit = {},
     content: List<@Composable BoxScope.() -> Unit>
 ) {
@@ -131,16 +122,18 @@ private fun EditModeLayout(
     val childRects = remember { mutableStateMapOf<String, Rect>() }
     val latestItems by rememberUpdatedState(items)
     val latestOnItemChanged by rememberUpdatedState(onItemChanged)
-    val latestGrid by rememberUpdatedState(grid)
+    val latestSettings by rememberUpdatedState(settings)
+    val latestSelectedId by rememberUpdatedState(selectedId)
+    val latestDensityValue by rememberUpdatedState(density.density)
 
     Box(
         modifier = modifier
             .background(color = MaterialTheme.colorScheme.background)
             .dashedBorder(MaterialTheme.colorScheme.primary)
-            .drawAlignmentGrid(MaterialTheme.colorScheme.primary, alignmentCenter)
+            .drawAlignmentGrid(MaterialTheme.colorScheme.primary, centerDeadZone)
             .drawSnapGrid(
-                dotSpacing = grid.visibleGridSize.dp,
-                showGrid = grid.showGrid
+                dotSpacing = settings.visibleStepDp.dp,
+                showGrid = settings.showGrid
             )
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { selectedId = null })
@@ -166,12 +159,12 @@ private fun EditModeLayout(
                                 lockedMode = resolveTransformLock(
                                     accumZoom,
                                     accumRotation,
-                                    scaleLocked = latestGrid.lockScale,
-                                    rotationLocked = latestGrid.lockRotation
+                                    scaleLocked = latestSettings.lockScale,
+                                    rotationLocked = latestSettings.lockRotation
                                 )
                             }
                             val mode = lockedMode
-                            val currentSelectedId = selectedId
+                            val currentSelectedId = latestSelectedId
                             if (mode != null && currentSelectedId != null) {
                                 val current =
                                     latestItems.firstOrNull { it.id == currentSelectedId }
@@ -181,26 +174,21 @@ private fun EditModeLayout(
                                             if (zoom != 1f) {
                                                 val sizePx =
                                                     childSizes[current.id] ?: IntSize.Zero
-                                                val densityVal = density.density
-                                                val fallbackW = if (sizePx.width > 0) {
-                                                    sizePx.width / densityVal -
-                                                        (current.padding.start + current.padding.end)
-                                                } else {
-                                                    current.widthDp?.toFloat() ?: 100f
-                                                }
-                                                val fallbackH = if (sizePx.height > 0) {
-                                                    sizePx.height / densityVal -
-                                                        (current.padding.top + current.padding.bottom)
-                                                } else {
-                                                    current.heightDp?.toFloat() ?: 100f
-                                                }
+                                                val densityVal = latestDensityValue
+                                                val (fallbackW, fallbackH) = fallbackItemSizeDp(
+                                                    sizePx = sizePx,
+                                                    padding = current.padding,
+                                                    widthDp = current.widthDp,
+                                                    heightDp = current.heightDp,
+                                                    density = densityVal
+                                                )
                                                 val (newW, newH) = resolveScaledSize(
                                                     currentWidthDp = current.widthDp,
                                                     currentHeightDp = current.heightDp,
                                                     fallbackWidthDp = fallbackW,
                                                     fallbackHeightDp = fallbackH,
                                                     zoom = zoom,
-                                                    stepDp = latestGrid.scaleStepDp
+                                                    stepDp = latestSettings.scaleStepDp
                                                 )
                                                 latestOnItemChanged(
                                                     current.copy(widthDp = newW, heightDp = newH)
@@ -214,7 +202,7 @@ private fun EditModeLayout(
                                                         rotationDegrees = resolveRotationDegrees(
                                                             currentDegrees = current.rotationDegrees,
                                                             deltaDegrees = rotationDelta,
-                                                            stepDegrees = latestGrid.rotationStepDegrees
+                                                            stepDegrees = latestSettings.rotationStepDegrees
                                                         )
                                                     )
                                                 )
@@ -232,14 +220,11 @@ private fun EditModeLayout(
     ) {
         items.forEachIndexed { index, item ->
             val dragOffset = remember { mutableStateOf(IntOffset.Zero) }
-            val childRect = remember { mutableStateOf(Rect.Zero) }
             val latestItem by rememberUpdatedState(item)
             val isSelected = selectedId == item.id
             key(item.id) {
                 Box(
-                    modifier = Modifier
-                        .align(item.alignment.toComposeAlignment())
-                        .upItemBounds(item)
+                    modifier = upPlacedItem(item)
                         .then(
                             if (isSelected) Modifier.border(2.dp, primary)
                             else Modifier.dashedItemBorder(Color.Gray)
@@ -259,11 +244,11 @@ private fun EditModeLayout(
                                     selectedId = latestItem.id
                                 },
                                 onDragEnd = {
-                                    if (!latestGrid.lockMove) {
+                                    if (!latestSettings.lockMove) {
                                         val size = containerSize.value
                                         if (size.width > 0 && size.height > 0) {
-                                            val pxToDp = 1f / density.density
-                                            val rect = childRect.value
+                                            val pxToDp = 1f / latestDensityValue
+                                            val rect = childRects[latestItem.id] ?: Rect.Zero
                                             val result = resolveDrop(
                                                 containerWidthDp = size.width * pxToDp,
                                                 containerHeightDp = size.height * pxToDp,
@@ -271,9 +256,9 @@ private fun EditModeLayout(
                                                 childTopDp = rect.top * pxToDp,
                                                 childRightDp = rect.right * pxToDp,
                                                 childBottomDp = rect.bottom * pxToDp,
-                                                alignmentCenterDp = alignmentCenter.value,
-                                                snapStepDp = latestGrid.snapGridSize,
-                                                snapToGrid = latestGrid.snapToGrid
+                                                centerDeadZoneDp = centerDeadZone.value,
+                                                snapStepDp = latestSettings.snapStepDp,
+                                                snapToGrid = latestSettings.snapToGrid
                                             )
                                             val current = latestItem
                                             latestOnItemChanged(
@@ -287,7 +272,7 @@ private fun EditModeLayout(
                                     dragOffset.value = IntOffset.Zero
                                 }
                             ) { change, dragAmount ->
-                                if (!latestGrid.lockMove) {
+                                if (!latestSettings.lockMove) {
                                     change.consume()
                                     dragOffset.value += IntOffset(
                                         x = dragAmount.x.toInt(),
@@ -297,8 +282,8 @@ private fun EditModeLayout(
                             }
                         }
                         .onGloballyPositioned {
-                            childRect.value = it.boundsInParent()
-                            childRects[item.id] = it.boundsInParent()
+                            val bounds = it.boundsInParent()
+                            childRects[item.id] = bounds
                             childSizes[item.id] = it.size
                         }
                 ) {
@@ -314,164 +299,13 @@ private fun EditModeLayout(
                 }
             }
         }
-        if (grid.showSnapGuides) {
+        if (settings.showSnapGuides) {
             SnapGuidesOverlay(
                 items = items,
                 childRects = childRects,
                 childSizes = childSizes,
                 color = primary
             )
-        }
-    }
-}
-
-@Composable
-private fun BoxScope.SnapGuidesOverlay(
-    items: List<UpItem>,
-    childRects: Map<String, Rect>,
-    childSizes: Map<String, IntSize>,
-    color: Color
-) {
-    val layoutDirection = LocalLayoutDirection.current
-    val isRtl = layoutDirection == LayoutDirection.Rtl
-    Canvas(modifier = Modifier.matchParentSize()) {
-        val dash = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-        items.forEach { item ->
-            val rect = childRects[item.id] ?: return@forEach
-            if (rect == Rect.Zero) return@forEach
-            val center = rect.center
-            val sizePx = childSizes[item.id]
-            snapGuideDirections(item.alignment).forEach { direction ->
-                val start = if (sizePx != null && sizePx.width > 0 && sizePx.height > 0) {
-                    val (startX, startY) = rotatedEdgeMidpoint(
-                        centerX = center.x,
-                        centerY = center.y,
-                        widthPx = sizePx.width.toFloat(),
-                        heightPx = sizePx.height.toFloat(),
-                        rotationDegrees = item.rotationDegrees,
-                        direction = direction
-                    )
-                    Offset(startX, startY)
-                } else {
-                    center
-                }
-                val end = when (direction) {
-                    UpSnapDirection.TOP -> Offset(start.x, 0f)
-                    UpSnapDirection.BOTTOM -> Offset(start.x, size.height)
-                    UpSnapDirection.START ->
-                        if (isRtl) Offset(size.width, start.y) else Offset(0f, start.y)
-                    UpSnapDirection.END ->
-                        if (isRtl) Offset(0f, start.y) else Offset(size.width, start.y)
-                }
-                drawLine(
-                    color = color,
-                    start = start,
-                    end = end,
-                    strokeWidth = 2f,
-                    pathEffect = dash
-                )
-            }
-        }
-    }
-}
-
-private fun Modifier.upItemBounds(item: UpItem): Modifier {
-    return this
-        .padding(
-            top = item.padding.top.dp,
-            bottom = item.padding.bottom.dp,
-            start = item.padding.start.dp,
-            end = item.padding.end.dp
-        )
-        .then(if (item.widthDp != null) Modifier.width(item.widthDp.dp) else Modifier)
-        .then(if (item.heightDp != null) Modifier.height(item.heightDp.dp) else Modifier)
-        .rotate(item.rotationDegrees)
-}
-
-private fun UpAlignment.toComposeAlignment(): Alignment {
-    return when (this) {
-        UpAlignment.CENTER -> Alignment.Center
-        UpAlignment.TOP -> Alignment.TopCenter
-        UpAlignment.BOTTOM -> Alignment.BottomCenter
-        UpAlignment.START -> Alignment.CenterStart
-        UpAlignment.END -> Alignment.CenterEnd
-        UpAlignment.START_TOP -> Alignment.TopStart
-        UpAlignment.END_TOP -> Alignment.TopEnd
-        UpAlignment.START_BOTTOM -> Alignment.BottomStart
-        UpAlignment.END_BOTTOM -> Alignment.BottomEnd
-    }
-}
-
-private fun Modifier.dashedBorder(color: Color) = this.drawBehind {
-    drawRoundRect(
-        color = color,
-        style = Stroke(
-            width = 2f,
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-        )
-    )
-}
-
-private fun Modifier.dashedItemBorder(color: Color, width: Dp = 1.dp) = this.drawBehind {
-    drawRect(
-        color = color,
-        style = Stroke(
-            width = width.toPx(),
-            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-        )
-    )
-}
-
-private fun Modifier.drawAlignmentGrid(color: Color, centerSize: Dp) =
-    this.drawBehind {
-        val horizontalDistance = size.width / 2f - centerSize.toPx() / 2
-        val verticalDistance = size.height / 2f - centerSize.toPx() / 2
-
-        drawLine(
-            color = color,
-            start = Offset(horizontalDistance, 0f),
-            end = Offset(horizontalDistance, size.height),
-            strokeWidth = 1f
-        )
-        drawLine(
-            color = color,
-            start = Offset(size.width - horizontalDistance, 0f),
-            end = Offset(size.width - horizontalDistance, size.height),
-            strokeWidth = 1f
-        )
-        drawLine(
-            color = color,
-            start = Offset(0f, verticalDistance),
-            end = Offset(size.width, verticalDistance),
-            strokeWidth = 1f
-        )
-        drawLine(
-            color = color,
-            start = Offset(0f, size.height - verticalDistance),
-            end = Offset(size.width, size.height - verticalDistance),
-            strokeWidth = 1f
-        )
-    }
-
-private fun Modifier.drawSnapGrid(
-    dotSpacing: Dp,
-    showGrid: Boolean,
-    color: Color = Color.Gray
-): Modifier {
-    if (!showGrid) return this
-    return this.drawBehind {
-        val spacingPx = dotSpacing.toPx()
-        if (spacingPx <= 0f) return@drawBehind
-        val xCount = (size.width / spacingPx).toInt()
-        val yCount = (size.height / spacingPx).toInt()
-        for (x in 0 until xCount) {
-            for (y in 0 until yCount) {
-                drawCircle(
-                    color = color,
-                    radius = 1f,
-                    center = Offset(x * spacingPx, y * spacingPx)
-                )
-            }
         }
     }
 }

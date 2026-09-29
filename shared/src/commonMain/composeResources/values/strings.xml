@@ -3,4 +3,13 @@
     <string name="app_name">Demo app</string>
     <string name="edit_layout">Edit layout</string>
     <string name="save_layout">Save</string>
+    <string name="view_layout">View layout</string>
+    <string name="lock_move">Lock move</string>
+    <string name="lock_rotation">Lock rotation</string>
+    <string name="lock_scale">Lock scale</string>
+    <string name="step_move">Move</string>
+    <string name="step_rotate">Rotate</string>
+    <string name="step_scale">Scale</string>
+    <string name="drag_me_a">Drag me (a)</string>
+    <string name="drag_me_b">Drag me (b)</string>
 </resources>

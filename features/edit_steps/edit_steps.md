@@ -7,7 +7,7 @@ Last update date: 2026-09-28
 Quantize all three transforms to user-visible steps and let the user
 change them from the demo:
 
-- Move step: existing `snapGridSize` (default 20, unchanged).
+- Move step: existing `snapStepDp` (default 20, unchanged).
 - Rotation step: new `rotationStepDegrees` (default 4 degrees).
 - Scale step: new `scaleStepDp` (default 4 dp, sizes snap to multiples).
 - Demo bottom bar (edit mode only) shows the three step values with
@@ -17,8 +17,8 @@ change them from the demo:
 
 `up_layout/src/commonMain/kotlin/com/mdsw/uplayout/UpModel.kt`:
 
-- `UpGridSettings` is the edit configuration: `showGrid`, `snapToGrid`,
-  `snapGridSize = 20` (move), `visibleGridSize`, plus
+- `UpEditSettings` is the edit configuration: `showGrid`, `snapToGrid`,
+  `snapStepDp = 20` (move), `visibleStepDp`, plus
   `rotationStepDegrees = 4f` and `scaleStepDp = 4`.
 - Move default stays 20 for backward compatibility; only the two new
   steps default to 4.
@@ -26,7 +26,7 @@ change them from the demo:
 ## Snapping math
 
 - `resolveScaledSize(..., stepDp = 0)`: after the zoom multiply and min
-  clamp, each side snaps via `roundToStep(value, stepDp)` when
+  clamp, each side snaps via `roundIntToStep(value, stepDp)` when
   `stepDp > 1`, then re-clamps to `minSizeDp`.
 - `resolveRotationDegrees(..., stepDegrees = 0f)`: normalizes to
   `[0, 360)`, then snaps to `round(value / step) * step` and
@@ -41,19 +41,19 @@ change them from the demo:
 `up_layout/src/commonMain/kotlin/com/mdsw/uplayout/UpLayout.kt`
 (`EditModeLayout`, container multitouch handler):
 
-- Reads steps from `latestGrid` (`rememberUpdatedState(grid)`) so demo
+- Reads steps from `latestSettings` (`rememberUpdatedState(settings)`) so demo
   changes apply without restarting the gesture; drag snap also moved
-  from stale `grid` to `latestGrid`.
-- SCALE branch passes `stepDp = latestGrid.scaleStepDp`.
-- ROTATE branch passes `stepDegrees = latestGrid.rotationStepDegrees`.
+  from stale `settings` to `latestSettings`.
+- SCALE branch passes `stepDp = latestSettings.scaleStepDp`.
+- ROTATE branch passes `stepDegrees = latestSettings.rotationStepDegrees`.
 - First-intention lock (`resolveTransformLock`) is unchanged.
 
 ## Demo wiring
 
 `shared/src/commonMain/kotlin/com/mdsw/usrpsnlyt/App.kt`:
 
-- `gridSettings` state (`remember { mutableStateOf(UpGridSettings()) }`)
-  passed as `grid = gridSettings` to `UpLayout`.
+- `editSettings` state (`remember { mutableStateOf(UpEditSettings()) }`)
+  passed as `settings = editSettings` to `UpLayout`.
 - `Scaffold(bottomBar)` shown only in edit mode: `Move` / `Rotate` /
   `Scale` step controls displaying current values, `-`/`+` adjust by
   1 (move/scale dp, rotation degrees), minima coerced to 1 / 1f.

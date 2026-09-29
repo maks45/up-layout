@@ -98,9 +98,15 @@ class UpDropMathTest {
     }
 
     @Test
-    fun roundToStepRoundsToNearest() {
-        assertEquals(20, roundToStep(12, 20))
-        assertEquals(0, roundToStep(9, 20))
-        assertEquals(40, roundToStep(30, 20))
+    fun roundIntToStepRoundsToNearest() {
+        assertEquals(20, roundIntToStep(12, 20))
+        assertEquals(0, roundIntToStep(9, 20))
+        assertEquals(40, roundIntToStep(30, 20))
+    }
+
+    @Test
+    fun roundIntToStepReturnsValueForNonPositiveStep() {
+        assertEquals(12, roundIntToStep(12, 0))
+        assertEquals(12, roundIntToStep(12, -4))
     }
 }

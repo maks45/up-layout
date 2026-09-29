@@ -67,6 +67,36 @@ class UpSnapMathTest {
         assertPointEquals(100f, 50f, edgeMidpoint(UpSnapDirection.END, -90f))
     }
 
+    @Test
+    fun rtlSwapsStartAndEndEdges() {
+        assertPointEquals(
+            150f,
+            100f,
+            rotatedEdgeMidpoint(
+                centerX = 100f,
+                centerY = 100f,
+                widthPx = 100f,
+                heightPx = 60f,
+                rotationDegrees = 0f,
+                direction = UpSnapDirection.START,
+                isRtl = true
+            )
+        )
+        assertPointEquals(
+            50f,
+            100f,
+            rotatedEdgeMidpoint(
+                centerX = 100f,
+                centerY = 100f,
+                widthPx = 100f,
+                heightPx = 60f,
+                rotationDegrees = 0f,
+                direction = UpSnapDirection.END,
+                isRtl = true
+            )
+        )
+    }
+
     private fun edgeMidpoint(
         direction: UpSnapDirection,
         rotationDegrees: Float

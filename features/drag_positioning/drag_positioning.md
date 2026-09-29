@@ -1,6 +1,6 @@
 # Drag positioning port (IACreator -> up_layout v1)
 
-Last update date: 2026-09-27
+Last update date: 2026-09-28
 
 ## Goal
 
@@ -14,8 +14,8 @@ covers position + rotation + size.
 
 - Container `Box` with visual affordances: dashed border, center alignment
   grid (`drawAlignmentGrid`, 20.dp center zone), snap dot grid
-  (`drawSnapGrid`, `GridSettings(showGrid, snapToGrid, snapGridSize=20,
-  visibleGridSize=40)`).
+  (`drawSnapGrid`, `GridSettings(showGrid, snapToGrid, snapStepDp=20,
+  visibleStepDp=40)`).
 - Each child is a `Box` positioned by `BoxScope.align` (9-way `UIAlignment`)
   plus padding offsets (`setAlign` / `setPaddings`) with fixed size
   (`setMeasurement`, width/height in dp).
@@ -37,7 +37,7 @@ IACreator file -> `up_layout` equivalent:
   (`id`, `alignment`, `padding: UpPadding`, `widthDp`/`heightDp` nullable).
   The generic `IAData` property bag was deliberately NOT ported (IACreator
   dataset/binding concern, not layout concern).
-- `GridSettings` -> `UpGridSettings` (same 4 fields).
+- `GridSettings` -> `UpEditSettings` (originally `UpGridSettings`, same 4 fields).
 - `updateAlignmentAndPadding` -> pure `resolveDrop` (`UpDropMath.kt`):
   all inputs/outputs are density-independent `Float` dp values, no
   `Density`/`Dp`/`Rect` in the signature, so it runs in `commonTest`.
