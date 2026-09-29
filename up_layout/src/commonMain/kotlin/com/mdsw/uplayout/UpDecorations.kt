@@ -1,13 +1,14 @@
 package com.mdsw.uplayout
 
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.rotate
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
@@ -70,60 +71,75 @@ internal fun Modifier.dashedItemBorder(color: Color, width: Dp = 1.dp) = this.dr
     )
 }
 
+/** Dashed rect using the width + brush of an existing [BorderStroke]. */
+internal fun Modifier.dashedBorderStroke(border: BorderStroke) = this.drawBehind {
+    drawRect(
+        brush = border.brush,
+        style = Stroke(
+            width = border.width.toPx(),
+            pathEffect = PathEffect.dashPathEffect(UpDashIntervals, 0f)
+        )
+    )
+}
+
 internal fun Modifier.drawAlignmentGrid(
     color: Color,
     centerSize: Dp,
-    showAlignmentGrid: Boolean = true
+    showAlignmentGrid: Boolean = true,
+    border: BorderStroke? = null
 ) =
     if (!showAlignmentGrid) this
     else this.drawBehind {
         val horizontalDistance = size.width / 2f - centerSize.toPx() / 2
         val verticalDistance = size.height / 2f - centerSize.toPx() / 2
+        val strokeWidth = border?.width?.toPx() ?: 1f
+        fun gridLine(start: Offset, end: Offset) {
+            if (border == null) {
+                drawLine(color, start, end, strokeWidth)
+            } else {
+                drawLine(border.brush, start, end, strokeWidth)
+            }
+        }
 
-        drawLine(
-            color = color,
-            start = Offset(horizontalDistance, 0f),
-            end = Offset(horizontalDistance, size.height),
-            strokeWidth = 1f
+        gridLine(
+            Offset(horizontalDistance, 0f),
+            Offset(horizontalDistance, size.height)
         )
-        drawLine(
-            color = color,
-            start = Offset(size.width - horizontalDistance, 0f),
-            end = Offset(size.width - horizontalDistance, size.height),
-            strokeWidth = 1f
+        gridLine(
+            Offset(size.width - horizontalDistance, 0f),
+            Offset(size.width - horizontalDistance, size.height)
         )
-        drawLine(
-            color = color,
-            start = Offset(0f, verticalDistance),
-            end = Offset(size.width, verticalDistance),
-            strokeWidth = 1f
+        gridLine(
+            Offset(0f, verticalDistance),
+            Offset(size.width, verticalDistance)
         )
-        drawLine(
-            color = color,
-            start = Offset(0f, size.height - verticalDistance),
-            end = Offset(size.width, size.height - verticalDistance),
-            strokeWidth = 1f
+        gridLine(
+            Offset(0f, size.height - verticalDistance),
+            Offset(size.width, size.height - verticalDistance)
         )
     }
 
 internal fun Modifier.drawSnapGrid(
     dotSpacing: Dp,
     showGrid: Boolean,
-    color: Color = Color.Gray
+    color: Color = Color.Gray,
+    border: BorderStroke? = null
 ): Modifier {
     if (!showGrid) return this
     return this.drawBehind {
         val spacingPx = dotSpacing.toPx()
         if (spacingPx <= 0f) return@drawBehind
+        val dotRadius = border?.width?.toPx()?.div(2f) ?: 1f
         val xCount = (size.width / spacingPx).toInt()
         val yCount = (size.height / spacingPx).toInt()
         for (x in 0 until xCount) {
             for (y in 0 until yCount) {
-                drawCircle(
-                    color = color,
-                    radius = 1f,
-                    center = Offset(x * spacingPx, y * spacingPx)
-                )
+                val center = Offset(x * spacingPx, y * spacingPx)
+                if (border == null) {
+                    drawCircle(color, dotRadius, center)
+                } else {
+                    drawCircle(border.brush, dotRadius, center)
+                }
             }
         }
     }

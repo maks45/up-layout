@@ -1,5 +1,6 @@
 package com.mdsw.uplayout
 
+import androidx.compose.foundation.BorderStroke
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -49,6 +50,20 @@ data class UpEditSettings(
     val showAlignmentGrid: Boolean = true,
     val showSnapGuides: Boolean = true,
     val showFrameBounds: Boolean = true,
+    /**
+     * Line styles (width + brush color) for edit-mode affordances.
+     * Null keeps the built-in default: unselected frame is a dashed gray
+     * `1.dp` rect, selected frame a solid theme-primary `2.dp` border,
+     * snap guides dashed theme-primary lines, alignment grid solid
+     * theme-primary lines, dot grid gray dots.
+     * For [gridBorder] the brush is the dot color and the width is the dot
+     * diameter.
+     */
+    val frameBorder: BorderStroke? = null,
+    val selectedFrameBorder: BorderStroke? = null,
+    val snapGuidesBorder: BorderStroke? = null,
+    val alignmentGridBorder: BorderStroke? = null,
+    val gridBorder: BorderStroke? = null,
     val snapToGrid: Boolean = true,
     val snapStepDp: Int = 20,
     val visibleStepDp: Int = 40,

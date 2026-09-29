@@ -133,11 +133,13 @@ private fun EditModeLayout(
             .drawAlignmentGrid(
                 MaterialTheme.colorScheme.primary,
                 centerDeadZone,
-                settings.showAlignmentGrid
+                settings.showAlignmentGrid,
+                settings.alignmentGridBorder
             )
             .drawSnapGrid(
                 dotSpacing = settings.visibleStepDp.dp,
-                showGrid = settings.showGrid
+                showGrid = settings.showGrid,
+                border = settings.gridBorder
             )
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { selectedId = null })
@@ -222,6 +224,14 @@ private fun EditModeLayout(
             }
             .onGloballyPositioned { containerSize.value = it.size }
     ) {
+        if (settings.showSnapGuides) {
+            SnapGuidesOverlay(
+                items = items,
+                childRects = childRects,
+                color = primary,
+                border = settings.snapGuidesBorder
+            )
+        }
         items.forEachIndexed { index, item ->
             val dragOffset = remember { mutableStateOf(IntOffset.Zero) }
             val latestItem by rememberUpdatedState(item)
@@ -231,8 +241,13 @@ private fun EditModeLayout(
                     modifier = upPlacedItem(item)
                         .then(
                             if (!settings.showFrameBounds) Modifier
-                            else if (isSelected) Modifier.border(2.dp, primary)
-                            else Modifier.dashedItemBorder(Color.Gray)
+                            else if (isSelected) {
+                                settings.selectedFrameBorder?.let { Modifier.border(it) }
+                                    ?: Modifier.border(2.dp, primary)
+                            } else {
+                                settings.frameBorder?.let { Modifier.dashedBorderStroke(it) }
+                                    ?: Modifier.dashedItemBorder(Color.Gray)
+                            }
                         )
                         .offset { dragOffset.value }
                         .pointerInput(Unit) {
@@ -303,14 +318,6 @@ private fun EditModeLayout(
                     )
                 }
             }
-        }
-        if (settings.showSnapGuides) {
-            SnapGuidesOverlay(
-                items = items,
-                childRects = childRects,
-                childSizes = childSizes,
-                color = primary
-            )
         }
     }
 }
