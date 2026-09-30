@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
@@ -24,6 +25,7 @@ internal fun BoxScope.SnapGuidesOverlay(
     val isRtl = layoutDirection == LayoutDirection.Rtl
     Canvas(modifier = Modifier.matchParentSize()) {
         val dash = PathEffect.dashPathEffect(UpDashIntervals, 0f)
+        val brush = border?.brush ?: SolidColor(color)
         val strokeWidth = border?.width?.toPx() ?: 2f
         items.forEach { item ->
             val rect = childRects[item.id] ?: return@forEach
@@ -34,27 +36,17 @@ internal fun BoxScope.SnapGuidesOverlay(
                     UpSnapDirection.TOP -> Offset(start.x, 0f)
                     UpSnapDirection.BOTTOM -> Offset(start.x, size.height)
                     UpSnapDirection.START ->
-                        if (isRtl) Offset(size.width, start.y) else Offset(0f, start.y)
+                        Offset(if (isRtl) size.width else 0f, start.y)
                     UpSnapDirection.END ->
-                        if (isRtl) Offset(0f, start.y) else Offset(size.width, start.y)
+                        Offset(if (isRtl) 0f else size.width, start.y)
                 }
-                if (border == null) {
-                    drawLine(
-                        color = color,
-                        start = start,
-                        end = end,
-                        strokeWidth = strokeWidth,
-                        pathEffect = dash
-                    )
-                } else {
-                    drawLine(
-                        brush = border.brush,
-                        start = start,
-                        end = end,
-                        strokeWidth = strokeWidth,
-                        pathEffect = dash
-                    )
-                }
+                drawLine(
+                    brush = brush,
+                    start = start,
+                    end = end,
+                    strokeWidth = strokeWidth,
+                    pathEffect = dash
+                )
             }
         }
     }

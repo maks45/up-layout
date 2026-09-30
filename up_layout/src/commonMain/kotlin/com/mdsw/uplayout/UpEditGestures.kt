@@ -17,15 +17,10 @@ internal fun fallbackItemSizeDp(
     heightDp: Int?,
     density: Float
 ): Pair<Float, Float> {
-    val fallbackW = if (sizePx.width > 0) {
-        sizePx.width / density - (padding.start + padding.end)
-    } else {
-        widthDp?.toFloat() ?: 100f
-    }
-    val fallbackH = if (sizePx.height > 0) {
-        sizePx.height / density - (padding.top + padding.bottom)
-    } else {
-        heightDp?.toFloat() ?: 100f
-    }
-    return Pair(fallbackW, fallbackH)
+    fun fallback(sizePx: Int, padSum: Int, explicitDp: Int?): Float =
+        if (sizePx > 0) sizePx / density - padSum else explicitDp?.toFloat() ?: 100f
+    return Pair(
+        fallback(sizePx.width, padding.start + padding.end, widthDp),
+        fallback(sizePx.height, padding.top + padding.bottom, heightDp)
+    )
 }

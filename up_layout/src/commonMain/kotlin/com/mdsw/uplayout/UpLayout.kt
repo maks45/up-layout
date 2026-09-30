@@ -1,7 +1,5 @@
 package com.mdsw.uplayout
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -24,7 +22,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -114,33 +111,19 @@ private fun EditModeLayout(
     onItemClick: (UpItem) -> Unit = {},
     content: List<@Composable BoxScope.() -> Unit>
 ) {
-    val density = LocalDensity.current
+    val density = LocalDensity.current.density
     val containerSize = remember { mutableStateOf(IntSize.Zero) }
     var selectedId by remember { mutableStateOf<String?>(null) }
-    val primary = MaterialTheme.colorScheme.primary
+    val colors = MaterialTheme.colorScheme
     val childSizes = remember { mutableStateMapOf<String, IntSize>() }
     val childRects = remember { mutableStateMapOf<String, Rect>() }
-    val latestItems by rememberUpdatedState(items)
-    val latestOnItemChanged by rememberUpdatedState(onItemChanged)
-    val latestSettings by rememberUpdatedState(settings)
-    val latestSelectedId by rememberUpdatedState(selectedId)
-    val latestDensityValue by rememberUpdatedState(density.density)
+    val latest by rememberUpdatedState(
+        UpEditSnapshot(items, onItemChanged, settings, selectedId, density)
+    )
 
     Box(
         modifier = modifier
-            .background(color = MaterialTheme.colorScheme.background)
-            .dashedBorder(MaterialTheme.colorScheme.primary)
-            .drawAlignmentGrid(
-                MaterialTheme.colorScheme.primary,
-                centerDeadZone,
-                settings.showAlignmentGrid,
-                settings.alignmentGridBorder
-            )
-            .drawSnapGrid(
-                dotSpacing = settings.visibleStepDp.dp,
-                showGrid = settings.showGrid,
-                border = settings.gridBorder
-            )
+            .upEditContainer(settings, centerDeadZone, colors.background, colors.primary)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { selectedId = null })
             }
@@ -165,55 +148,36 @@ private fun EditModeLayout(
                                 lockedMode = resolveTransformLock(
                                     accumZoom,
                                     accumRotation,
-                                    scaleLocked = latestSettings.lockScale,
-                                    rotationLocked = latestSettings.lockRotation
+                                    scaleLocked = latest.settings.lockScale,
+                                    rotationLocked = latest.settings.lockRotation
                                 )
                             }
-                            val mode = lockedMode
-                            val currentSelectedId = latestSelectedId
-                            if (mode != null && currentSelectedId != null) {
-                                val current =
-                                    latestItems.firstOrNull { it.id == currentSelectedId }
-                                if (current != null) {
-                                    when (mode) {
-                                        UpTransformMode.SCALE -> {
-                                            if (zoom != 1f) {
-                                                val sizePx =
-                                                    childSizes[current.id] ?: IntSize.Zero
-                                                val densityVal = latestDensityValue
-                                                val (fallbackW, fallbackH) = fallbackItemSizeDp(
-                                                    sizePx = sizePx,
-                                                    padding = current.padding,
-                                                    widthDp = current.widthDp,
-                                                    heightDp = current.heightDp,
-                                                    density = densityVal
+                            latest.selectedId?.let { id ->
+                                latest.items.firstOrNull { it.id == id }?.let { current ->
+                                    when (lockedMode) {
+                                        UpTransformMode.SCALE -> if (zoom != 1f) {
+                                            latest.onItemChanged(
+                                                scaledItem(
+                                                    current,
+                                                    childSizes[current.id] ?: IntSize.Zero,
+                                                    latest.density,
+                                                    zoom,
+                                                    latest.settings.scaleStepDp
                                                 )
-                                                val (newW, newH) = resolveScaledSize(
-                                                    currentWidthDp = current.widthDp,
-                                                    currentHeightDp = current.heightDp,
-                                                    fallbackWidthDp = fallbackW,
-                                                    fallbackHeightDp = fallbackH,
-                                                    zoom = zoom,
-                                                    stepDp = latestSettings.scaleStepDp
-                                                )
-                                                latestOnItemChanged(
-                                                    current.copy(widthDp = newW, heightDp = newH)
-                                                )
-                                            }
+                                            )
                                         }
-                                        UpTransformMode.ROTATE -> {
-                                            if (rotationDelta != 0f) {
-                                                latestOnItemChanged(
-                                                    current.copy(
-                                                        rotationDegrees = resolveRotationDegrees(
-                                                            currentDegrees = current.rotationDegrees,
-                                                            deltaDegrees = rotationDelta,
-                                                            stepDegrees = latestSettings.rotationStepDegrees
-                                                        )
+                                        UpTransformMode.ROTATE -> if (rotationDelta != 0f) {
+                                            latest.onItemChanged(
+                                                current.copy(
+                                                    rotationDegrees = resolveRotationDegrees(
+                                                        current.rotationDegrees,
+                                                        rotationDelta,
+                                                        latest.settings.rotationStepDegrees
                                                     )
                                                 )
-                                            }
+                                            )
                                         }
+                                        null -> Unit
                                     }
                                 }
                             }
@@ -228,27 +192,17 @@ private fun EditModeLayout(
             SnapGuidesOverlay(
                 items = items,
                 childRects = childRects,
-                color = primary,
+                color = colors.primary,
                 border = settings.snapGuidesBorder
             )
         }
         items.forEachIndexed { index, item ->
             val dragOffset = remember { mutableStateOf(IntOffset.Zero) }
             val latestItem by rememberUpdatedState(item)
-            val isSelected = selectedId == item.id
             key(item.id) {
                 Box(
                     modifier = upPlacedItem(item)
-                        .then(
-                            if (!settings.showFrameBounds) Modifier
-                            else if (isSelected) {
-                                settings.selectedFrameBorder?.let { Modifier.border(it) }
-                                    ?: Modifier.border(2.dp, primary)
-                            } else {
-                                settings.frameBorder?.let { Modifier.dashedBorderStroke(it) }
-                                    ?: Modifier.dashedItemBorder(Color.Gray)
-                            }
-                        )
+                        .upFrameBorder(selectedId == item.id, settings, colors.primary)
                         .offset { dragOffset.value }
                         .pointerInput(Unit) {
                             // Select on press (no consume) so a direct two-finger
@@ -264,51 +218,28 @@ private fun EditModeLayout(
                                     selectedId = latestItem.id
                                 },
                                 onDragEnd = {
-                                    if (!latestSettings.lockMove) {
-                                        val size = containerSize.value
-                                        if (size.width > 0 && size.height > 0) {
-                                            val pxToDp = 1f / latestDensityValue
-                                            val rect = childRects[latestItem.id] ?: Rect.Zero
-                                            val result = resolveDrop(
-                                                containerWidthDp = size.width * pxToDp,
-                                                containerHeightDp = size.height * pxToDp,
-                                                childLeftDp = rect.left * pxToDp,
-                                                childTopDp = rect.top * pxToDp,
-                                                childRightDp = rect.right * pxToDp,
-                                                childBottomDp = rect.bottom * pxToDp,
-                                                centerDeadZoneDp = centerDeadZone.value,
-                                                snapStepDp = latestSettings.snapStepDp,
-                                                snapToGrid = latestSettings.snapToGrid,
-                                                lockedAlignment = if (latestSettings.lockSnaps) {
-                                                    latestItem.alignment
-                                                } else {
-                                                    null
-                                                }
-                                            )
-                                            val current = latestItem
-                                            latestOnItemChanged(
-                                                current.copy(
-                                                    alignment = result.alignment,
-                                                    padding = result.padding
-                                                )
-                                            )
-                                        }
-                                    }
+                                    dropUpdate(
+                                        containerSize = containerSize.value,
+                                        rect = childRects[latestItem.id] ?: Rect.Zero,
+                                        item = latestItem,
+                                        settings = latest.settings,
+                                        density = latest.density,
+                                        centerDeadZone = centerDeadZone.value
+                                    )?.let(latest.onItemChanged)
                                     dragOffset.value = IntOffset.Zero
                                 }
                             ) { change, dragAmount ->
-                                if (!latestSettings.lockMove) {
+                                if (!latest.settings.lockMove) {
                                     change.consume()
                                     dragOffset.value += IntOffset(
-                                        x = dragAmount.x.toInt(),
-                                        y = dragAmount.y.toInt()
+                                        dragAmount.x.toInt(),
+                                        dragAmount.y.toInt()
                                     )
                                 }
                             }
                         }
                         .onGloballyPositioned {
-                            val bounds = it.boundsInParent()
-                            childRects[item.id] = bounds
+                            childRects[item.id] = it.boundsInParent()
                             childSizes[item.id] = it.size
                         }
                 ) {
@@ -325,4 +256,49 @@ private fun EditModeLayout(
             }
         }
     }
+}
+
+private data class UpEditSnapshot(
+    val items: List<UpItem>,
+    val onItemChanged: (UpItem) -> Unit,
+    val settings: UpEditSettings,
+    val selectedId: String?,
+    val density: Float
+)
+
+private fun scaledItem(
+    current: UpItem,
+    sizePx: IntSize,
+    density: Float,
+    zoom: Float,
+    stepDp: Int
+): UpItem {
+    val (fallbackW, fallbackH) = fallbackItemSizeDp(sizePx, current.padding, current.widthDp, current.heightDp, density)
+    val (newW, newH) = resolveScaledSize(current.widthDp, current.heightDp, fallbackW, fallbackH, zoom, stepDp = stepDp)
+    return current.copy(widthDp = newW, heightDp = newH)
+}
+
+private fun dropUpdate(
+    containerSize: IntSize,
+    rect: Rect,
+    item: UpItem,
+    settings: UpEditSettings,
+    density: Float,
+    centerDeadZone: Float
+): UpItem? {
+    if (settings.lockMove || containerSize.width <= 0 || containerSize.height <= 0) return null
+    val pxToDp = 1f / density
+    val result = resolveDrop(
+        containerWidthDp = containerSize.width * pxToDp,
+        containerHeightDp = containerSize.height * pxToDp,
+        childLeftDp = rect.left * pxToDp,
+        childTopDp = rect.top * pxToDp,
+        childRightDp = rect.right * pxToDp,
+        childBottomDp = rect.bottom * pxToDp,
+        centerDeadZoneDp = centerDeadZone,
+        snapStepDp = settings.snapStepDp,
+        snapToGrid = settings.snapToGrid,
+        lockedAlignment = if (settings.lockSnaps) item.alignment else null
+    )
+    return item.copy(alignment = result.alignment, padding = result.padding)
 }

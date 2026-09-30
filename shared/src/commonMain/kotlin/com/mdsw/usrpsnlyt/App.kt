@@ -95,72 +95,49 @@ fun App(persistLayout: Boolean = true) {
                                 }
                             )
                             if (isEditMode) {
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.show_grid),
-                                    checked = editSettings.showGrid,
-                                    onToggle = {
-                                        editSettings = editSettings.copy(showGrid = !editSettings.showGrid)
-                                    }
+                                val toggles = listOf(
+                                    Triple(
+                                        stringResource(Res.string.show_grid),
+                                        editSettings.showGrid,
+                                    ) { v: UpEditSettings -> v.copy(showGrid = !v.showGrid) },
+                                    Triple(
+                                        stringResource(Res.string.show_alignment_grid),
+                                        editSettings.showAlignmentGrid,
+                                    ) { v: UpEditSettings -> v.copy(showAlignmentGrid = !v.showAlignmentGrid) },
+                                    Triple(
+                                        stringResource(Res.string.show_snap_guides),
+                                        editSettings.showSnapGuides,
+                                    ) { v: UpEditSettings -> v.copy(showSnapGuides = !v.showSnapGuides) },
+                                    Triple(
+                                        stringResource(Res.string.show_frame_bounds),
+                                        editSettings.showFrameBounds,
+                                    ) { v: UpEditSettings -> v.copy(showFrameBounds = !v.showFrameBounds) },
+                                    Triple(
+                                        stringResource(Res.string.snap_to_grid),
+                                        editSettings.snapToGrid,
+                                    ) { v: UpEditSettings -> v.copy(snapToGrid = !v.snapToGrid) },
+                                    Triple(
+                                        stringResource(Res.string.lock_move),
+                                        editSettings.lockMove,
+                                    ) { v: UpEditSettings -> v.copy(lockMove = !v.lockMove) },
+                                    Triple(
+                                        stringResource(Res.string.lock_rotation),
+                                        editSettings.lockRotation,
+                                    ) { v: UpEditSettings -> v.copy(lockRotation = !v.lockRotation) },
+                                    Triple(
+                                        stringResource(Res.string.lock_scale),
+                                        editSettings.lockScale,
+                                    ) { v: UpEditSettings -> v.copy(lockScale = !v.lockScale) },
+                                    Triple(
+                                        stringResource(Res.string.lock_snaps),
+                                        editSettings.lockSnaps,
+                                    ) { v: UpEditSettings -> v.copy(lockSnaps = !v.lockSnaps) }
                                 )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.show_alignment_grid),
-                                    checked = editSettings.showAlignmentGrid,
-                                    onToggle = {
-                                        editSettings =
-                                            editSettings.copy(showAlignmentGrid = !editSettings.showAlignmentGrid)
+                                toggles.forEach { (label, checked, update) ->
+                                    ToggleMenuItem(label, checked) {
+                                        editSettings = update(editSettings)
                                     }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.show_snap_guides),
-                                    checked = editSettings.showSnapGuides,
-                                    onToggle = {
-                                        editSettings =
-                                            editSettings.copy(showSnapGuides = !editSettings.showSnapGuides)
-                                    }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.show_frame_bounds),
-                                    checked = editSettings.showFrameBounds,
-                                    onToggle = {
-                                        editSettings =
-                                            editSettings.copy(showFrameBounds = !editSettings.showFrameBounds)
-                                    }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.snap_to_grid),
-                                    checked = editSettings.snapToGrid,
-                                    onToggle = {
-                                        editSettings = editSettings.copy(snapToGrid = !editSettings.snapToGrid)
-                                    }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.lock_move),
-                                    checked = editSettings.lockMove,
-                                    onToggle = {
-                                        editSettings = editSettings.copy(lockMove = !editSettings.lockMove)
-                                    }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.lock_rotation),
-                                    checked = editSettings.lockRotation,
-                                    onToggle = {
-                                        editSettings = editSettings.copy(lockRotation = !editSettings.lockRotation)
-                                    }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.lock_scale),
-                                    checked = editSettings.lockScale,
-                                    onToggle = {
-                                        editSettings = editSettings.copy(lockScale = !editSettings.lockScale)
-                                    }
-                                )
-                                ToggleMenuItem(
-                                    label = stringResource(Res.string.lock_snaps),
-                                    checked = editSettings.lockSnaps,
-                                    onToggle = {
-                                        editSettings = editSettings.copy(lockSnaps = !editSettings.lockSnaps)
-                                    }
-                                )
+                                }
                             }
                         }
                     }
@@ -173,75 +150,63 @@ fun App(persistLayout: Boolean = true) {
                             modifier = Modifier.fillMaxWidth().padding(8.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            StepControl(
-                                label = stringResource(Res.string.step_move),
-                                value = editSettings.snapStepDp.toString(),
-                                onMinus = {
-                                    editSettings = editSettings.copy(
-                                        snapStepDp = (editSettings.snapStepDp - 1).coerceAtLeast(1)
-                                    )
-                                },
-                                onPlus = {
-                                    editSettings = editSettings.copy(
-                                        snapStepDp = editSettings.snapStepDp + 1
-                                    )
-                                }
+                            val steps = listOf(
+                                StepSpec(
+                                    label = stringResource(Res.string.step_move),
+                                    value = editSettings.snapStepDp.toString(),
+                                    onMinus = {
+                                        editSettings = editSettings.copy(
+                                            snapStepDp = (editSettings.snapStepDp - 1).coerceAtLeast(1)
+                                        )
+                                    },
+                                    onPlus = {
+                                        editSettings = editSettings.copy(
+                                            snapStepDp = editSettings.snapStepDp + 1
+                                        )
+                                    }
+                                ),
+                                StepSpec(
+                                    label = stringResource(Res.string.step_rotate),
+                                    value = editSettings.rotationStepDegrees.toString(),
+                                    onMinus = {
+                                        editSettings = editSettings.copy(
+                                            rotationStepDegrees = (editSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
+                                        )
+                                    },
+                                    onPlus = {
+                                        editSettings = editSettings.copy(
+                                            rotationStepDegrees = editSettings.rotationStepDegrees + 1f
+                                        )
+                                    }
+                                ),
+                                StepSpec(
+                                    label = stringResource(Res.string.step_scale),
+                                    value = editSettings.scaleStepDp.toString(),
+                                    onMinus = {
+                                        editSettings = editSettings.copy(
+                                            scaleStepDp = (editSettings.scaleStepDp - 1).coerceAtLeast(1)
+                                        )
+                                    },
+                                    onPlus = {
+                                        editSettings = editSettings.copy(
+                                            scaleStepDp = editSettings.scaleStepDp + 1
+                                        )
+                                    }
+                                )
                             )
-                            StepControl(
-                                label = stringResource(Res.string.step_rotate),
-                                value = editSettings.rotationStepDegrees.toString(),
-                                onMinus = {
-                                    editSettings = editSettings.copy(
-                                        rotationStepDegrees = (editSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
-                                    )
-                                },
-                                onPlus = {
-                                    editSettings = editSettings.copy(
-                                        rotationStepDegrees = editSettings.rotationStepDegrees + 1f
-                                    )
-                                }
-                            )
-                            StepControl(
-                                label = stringResource(Res.string.step_scale),
-                                value = editSettings.scaleStepDp.toString(),
-                                onMinus = {
-                                    editSettings = editSettings.copy(
-                                        scaleStepDp = (editSettings.scaleStepDp - 1).coerceAtLeast(1)
-                                    )
-                                },
-                                onPlus = {
-                                    editSettings = editSettings.copy(
-                                        scaleStepDp = editSettings.scaleStepDp + 1
-                                    )
-                                }
-                            )
+                            steps.forEach { spec ->
+                                StepControl(spec.label, spec.value, spec.onMinus, spec.onPlus)
+                            }
                         }
                     }
                 }
             }
         ) { innerPadding ->
-            var config by remember {
-                mutableStateOf(
-                    UpScreenConfig(
-                        items = listOf(
-                            UpItem(
-                                id = "a",
-                                alignment = UpAlignment.START_TOP,
-                                padding = UpPadding(top = 16, start = 16),
-                                widthDp = 240,
-                                heightDp = 140
-                            ),
-                            UpItem(
-                                id = "b",
-                                alignment = UpAlignment.END_BOTTOM,
-                                padding = UpPadding(bottom = 16, end = 16),
-                                widthDp = 240,
-                                heightDp = 140
-                            )
-                        )
-                    )
-                )
-            }
+            var config by remember { mutableStateOf(demoConfig()) }
+            val cardTexts = listOf(
+                stringResource(Res.string.drag_me_a),
+                stringResource(Res.string.drag_me_b)
+            )
             UpLayout(
                 items = config.items,
                 onItemChanged = { updated ->
@@ -255,30 +220,7 @@ fun App(persistLayout: Boolean = true) {
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize(),
-                content = listOf(
-                    {
-                        Text(
-                            text = stringResource(Res.string.drag_me_a),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .wrapContentHeight(Alignment.CenterVertically),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            autoSize = TextAutoSize.StepBased()
-                        )
-                    },
-                    {
-                        Text(
-                            text = stringResource(Res.string.drag_me_b),
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .wrapContentHeight(Alignment.CenterVertically),
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            autoSize = TextAutoSize.StepBased()
-                        )
-                    }
-                )
+                content = cardTexts.map { text -> { DemoCard(text) } }
             )
         }
     }
@@ -299,6 +241,33 @@ private fun ToggleMenuItem(
             )
         },
         onClick = onToggle
+    )
+}
+
+private data class StepSpec(
+    val label: String,
+    val value: String,
+    val onMinus: () -> Unit,
+    val onPlus: () -> Unit
+)
+
+private fun demoConfig() = UpScreenConfig(
+    items = listOf(
+        UpItem("a", UpAlignment.START_TOP, UpPadding(top = 16, start = 16), 240, 140),
+        UpItem("b", UpAlignment.END_BOTTOM, UpPadding(bottom = 16, end = 16), 240, 140)
+    )
+)
+
+@Composable
+private fun DemoCard(text: String) {
+    Text(
+        text = text,
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentHeight(Alignment.CenterVertically),
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        autoSize = TextAutoSize.StepBased()
     )
 }
 

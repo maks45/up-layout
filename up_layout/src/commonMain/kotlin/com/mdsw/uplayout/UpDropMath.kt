@@ -49,15 +49,15 @@ fun resolveDrop(
         centerY > vCenter + half -> UpAlignment.BOTTOM
         else -> UpAlignment.CENTER
     }
-    val alignment = lockedAlignment ?: when {
-        hAlign == UpAlignment.START && vAlign == UpAlignment.TOP -> UpAlignment.START_TOP
-        hAlign == UpAlignment.CENTER && vAlign == UpAlignment.TOP -> UpAlignment.TOP
-        hAlign == UpAlignment.END && vAlign == UpAlignment.TOP -> UpAlignment.END_TOP
-        hAlign == UpAlignment.START && vAlign == UpAlignment.CENTER -> UpAlignment.START
-        hAlign == UpAlignment.CENTER && vAlign == UpAlignment.CENTER -> UpAlignment.CENTER
-        hAlign == UpAlignment.END && vAlign == UpAlignment.CENTER -> UpAlignment.END
-        hAlign == UpAlignment.START -> UpAlignment.START_BOTTOM
-        hAlign == UpAlignment.CENTER -> UpAlignment.BOTTOM
+    val alignment = lockedAlignment ?: when (hAlign to vAlign) {
+        UpAlignment.START to UpAlignment.TOP -> UpAlignment.START_TOP
+        UpAlignment.CENTER to UpAlignment.TOP -> UpAlignment.TOP
+        UpAlignment.END to UpAlignment.TOP -> UpAlignment.END_TOP
+        UpAlignment.START to UpAlignment.CENTER -> UpAlignment.START
+        UpAlignment.CENTER to UpAlignment.CENTER -> UpAlignment.CENTER
+        UpAlignment.END to UpAlignment.CENTER -> UpAlignment.END
+        UpAlignment.START to UpAlignment.BOTTOM -> UpAlignment.START_BOTTOM
+        UpAlignment.CENTER to UpAlignment.BOTTOM -> UpAlignment.BOTTOM
         else -> UpAlignment.END_BOTTOM
     }
 

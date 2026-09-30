@@ -1,6 +1,8 @@
 package com.mdsw.uplayout
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -10,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -24,18 +28,42 @@ internal fun BoxScope.upPlacedItem(item: UpItem): Modifier =
         .align(item.alignment.toComposeAlignment())
         .upItemBounds(item)
 
-internal fun Modifier.upItemBounds(item: UpItem): Modifier {
-    return this
-        .padding(
-            top = item.padding.top.dp,
-            bottom = item.padding.bottom.dp,
-            start = item.padding.start.dp,
-            end = item.padding.end.dp
-        )
-        .then(if (item.widthDp != null) Modifier.width(item.widthDp.dp) else Modifier)
-        .then(if (item.heightDp != null) Modifier.height(item.heightDp.dp) else Modifier)
-        .rotate(item.rotationDegrees)
+internal fun Modifier.upItemBounds(item: UpItem): Modifier = padding(
+    top = item.padding.top.dp,
+    bottom = item.padding.bottom.dp,
+    start = item.padding.start.dp,
+    end = item.padding.end.dp
+)
+    .then(item.widthDp?.let { Modifier.width(it.dp) } ?: Modifier)
+    .then(item.heightDp?.let { Modifier.height(it.dp) } ?: Modifier)
+    .rotate(item.rotationDegrees)
+
+/** Frame border for edit mode: selected solid, unselected dashed, or hidden. */
+internal fun Modifier.upFrameBorder(
+    isSelected: Boolean,
+    settings: UpEditSettings,
+    selectedColor: Color
+): Modifier {
+    if (!settings.showFrameBounds) return this
+    if (isSelected) {
+        return this.then(settings.selectedFrameBorder?.let { Modifier.border(it) }
+            ?: Modifier.border(2.dp, selectedColor))
+    }
+    return this.then(settings.frameBorder?.let { dashedBorderStroke(it) }
+        ?: dashedItemBorder(Color.Gray))
 }
+
+/** Container background + edit-mode grids. */
+internal fun Modifier.upEditContainer(
+    settings: UpEditSettings,
+    centerSize: Dp,
+    backgroundColor: Color,
+    primary: Color
+): Modifier = this
+    .background(color = backgroundColor)
+    .dashedBorder(primary)
+    .drawAlignmentGrid(primary, centerSize, settings.showAlignmentGrid, settings.alignmentGridBorder)
+    .drawSnapGrid(settings.visibleStepDp.dp, settings.showGrid, border = settings.gridBorder)
 
 internal fun UpAlignment.toComposeAlignment(): Alignment {
     return when (this) {
@@ -51,32 +79,24 @@ internal fun UpAlignment.toComposeAlignment(): Alignment {
     }
 }
 
-internal fun Modifier.dashedBorder(color: Color) = this.drawBehind {
-    drawRoundRect(
-        color = color,
-        style = Stroke(
-            width = 2f,
-            pathEffect = PathEffect.dashPathEffect(UpDashIntervals, 0f)
-        )
-    )
-}
+internal fun Modifier.dashedBorder(color: Color) = dashedRect(SolidColor(color), null, 2f)
 
-internal fun Modifier.dashedItemBorder(color: Color, width: Dp = 1.dp) = this.drawBehind {
-    drawRect(
-        color = color,
-        style = Stroke(
-            width = width.toPx(),
-            pathEffect = PathEffect.dashPathEffect(UpDashIntervals, 0f)
-        )
-    )
-}
+internal fun Modifier.dashedItemBorder(color: Color, width: Dp = 1.dp) =
+    dashedRect(SolidColor(color), width)
 
 /** Dashed rect using the width + brush of an existing [BorderStroke]. */
-internal fun Modifier.dashedBorderStroke(border: BorderStroke) = this.drawBehind {
+internal fun Modifier.dashedBorderStroke(border: BorderStroke) =
+    dashedRect(border.brush, border.width)
+
+private fun Modifier.dashedRect(
+    brush: Brush,
+    width: Dp?,
+    widthPxFallback: Float = 1f
+) = drawBehind {
     drawRect(
-        brush = border.brush,
+        brush = brush,
         style = Stroke(
-            width = border.width.toPx(),
+            width?.toPx() ?: widthPxFallback,
             pathEffect = PathEffect.dashPathEffect(UpDashIntervals, 0f)
         )
     )
@@ -89,34 +109,17 @@ internal fun Modifier.drawAlignmentGrid(
     border: BorderStroke? = null
 ) =
     if (!showAlignmentGrid) this
-    else this.drawBehind {
-        val horizontalDistance = size.width / 2f - centerSize.toPx() / 2
-        val verticalDistance = size.height / 2f - centerSize.toPx() / 2
+    else drawBehind {
+        val brush = border?.brush ?: SolidColor(color)
         val strokeWidth = border?.width?.toPx() ?: 1f
-        fun gridLine(start: Offset, end: Offset) {
-            if (border == null) {
-                drawLine(color, start, end, strokeWidth)
-            } else {
-                drawLine(border.brush, start, end, strokeWidth)
-            }
-        }
+        val x = size.width / 2f - centerSize.toPx() / 2
+        val y = size.height / 2f - centerSize.toPx() / 2
+        fun gridLine(start: Offset, end: Offset) = drawLine(brush, start, end, strokeWidth)
 
-        gridLine(
-            Offset(horizontalDistance, 0f),
-            Offset(horizontalDistance, size.height)
-        )
-        gridLine(
-            Offset(size.width - horizontalDistance, 0f),
-            Offset(size.width - horizontalDistance, size.height)
-        )
-        gridLine(
-            Offset(0f, verticalDistance),
-            Offset(size.width, verticalDistance)
-        )
-        gridLine(
-            Offset(0f, size.height - verticalDistance),
-            Offset(size.width, size.height - verticalDistance)
-        )
+        gridLine(Offset(x, 0f), Offset(x, size.height))
+        gridLine(Offset(size.width - x, 0f), Offset(size.width - x, size.height))
+        gridLine(Offset(0f, y), Offset(size.width, y))
+        gridLine(Offset(0f, size.height - y), Offset(size.width, size.height - y))
     }
 
 internal fun Modifier.drawSnapGrid(
@@ -126,20 +129,16 @@ internal fun Modifier.drawSnapGrid(
     border: BorderStroke? = null
 ): Modifier {
     if (!showGrid) return this
-    return this.drawBehind {
+    return drawBehind {
         val spacingPx = dotSpacing.toPx()
         if (spacingPx <= 0f) return@drawBehind
+        val brush = border?.brush ?: SolidColor(color)
         val dotRadius = border?.width?.toPx()?.div(2f) ?: 1f
         val xCount = (size.width / spacingPx).toInt()
         val yCount = (size.height / spacingPx).toInt()
         for (x in 0 until xCount) {
             for (y in 0 until yCount) {
-                val center = Offset(x * spacingPx, y * spacingPx)
-                if (border == null) {
-                    drawCircle(color, dotRadius, center)
-                } else {
-                    drawCircle(border.brush, dotRadius, center)
-                }
+                drawCircle(brush, dotRadius, Offset(x * spacingPx, y * spacingPx))
             }
         }
     }
