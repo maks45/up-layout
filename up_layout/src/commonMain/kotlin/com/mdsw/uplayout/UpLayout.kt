@@ -278,7 +278,12 @@ private fun EditModeLayout(
                                                 childBottomDp = rect.bottom * pxToDp,
                                                 centerDeadZoneDp = centerDeadZone.value,
                                                 snapStepDp = latestSettings.snapStepDp,
-                                                snapToGrid = latestSettings.snapToGrid
+                                                snapToGrid = latestSettings.snapToGrid,
+                                                lockedAlignment = if (latestSettings.lockSnaps) {
+                                                    latestItem.alignment
+                                                } else {
+                                                    null
+                                                }
                                             )
                                             val current = latestItem
                                             latestOnItemChanged(

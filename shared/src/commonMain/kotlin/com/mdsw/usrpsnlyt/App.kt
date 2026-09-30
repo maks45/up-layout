@@ -48,6 +48,7 @@ import userpositionedlayout.shared.generated.resources.edit_layout
 import userpositionedlayout.shared.generated.resources.lock_move
 import userpositionedlayout.shared.generated.resources.lock_rotation
 import userpositionedlayout.shared.generated.resources.lock_scale
+import userpositionedlayout.shared.generated.resources.lock_snaps
 import userpositionedlayout.shared.generated.resources.show_alignment_grid
 import userpositionedlayout.shared.generated.resources.show_frame_bounds
 import userpositionedlayout.shared.generated.resources.show_grid
@@ -151,6 +152,13 @@ fun App(persistLayout: Boolean = true) {
                                     checked = editSettings.lockScale,
                                     onToggle = {
                                         editSettings = editSettings.copy(lockScale = !editSettings.lockScale)
+                                    }
+                                )
+                                ToggleMenuItem(
+                                    label = stringResource(Res.string.lock_snaps),
+                                    checked = editSettings.lockSnaps,
+                                    onToggle = {
+                                        editSettings = editSettings.copy(lockSnaps = !editSettings.lockSnaps)
                                     }
                                 )
                             }

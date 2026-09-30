@@ -98,6 +98,38 @@ class UpDropMathTest {
     }
 
     @Test
+    fun lockedAlignmentKeepsAlignmentAndRecomputesItsPaddings() {
+        val result = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 290f,
+            childTopDp = 740f,
+            childRightDp = 390f,
+            childBottomDp = 790f,
+            snapToGrid = false,
+            lockedAlignment = UpAlignment.START_TOP
+        )
+        assertEquals(UpAlignment.START_TOP, result.alignment)
+        assertEquals(UpPadding(top = 740, start = 290), result.padding)
+    }
+
+    @Test
+    fun lockedCenterStaysCenterWithZeroPadding() {
+        val result = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 10f,
+            childTopDp = 10f,
+            childRightDp = 110f,
+            childBottomDp = 60f,
+            snapToGrid = false,
+            lockedAlignment = UpAlignment.CENTER
+        )
+        assertEquals(UpAlignment.CENTER, result.alignment)
+        assertEquals(UpPadding(), result.padding)
+    }
+
+    @Test
     fun roundIntToStepRoundsToNearest() {
         assertEquals(20, roundIntToStep(12, 20))
         assertEquals(0, roundIntToStep(9, 20))

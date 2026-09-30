@@ -71,7 +71,15 @@ data class UpEditSettings(
     val scaleStepDp: Int = 4,
     val lockMove: Boolean = false,
     val lockRotation: Boolean = false,
-    val lockScale: Boolean = false
+    val lockScale: Boolean = false,
+    /**
+     * When true, a drag keeps the frame's current alignment and only the
+     * paddings of that alignment are recomputed from the drop position, so
+     * the frame can still move but never changes snaps. CENTER has no
+     * paddings and therefore stays put; TOP/BOTTOM/START/END move along
+     * their single free axis. Unlike [lockMove], the drag itself is allowed.
+     */
+    val lockSnaps: Boolean = false
 )
 
 @Deprecated(

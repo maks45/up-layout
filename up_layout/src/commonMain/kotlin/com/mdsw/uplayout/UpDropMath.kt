@@ -20,6 +20,8 @@ fun roundToStep(value: Int, step: Int): Int = roundIntToStep(value, step)
 // Pure port of IACreator's updateAlignmentAndPadding. All values are dp,
 // child bounds are in container coordinates. No Compose types involved.
 // centerDeadZoneDp is the full width/height of the CENTER snapping band.
+// When lockedAlignment is provided, the alignment is kept and only the
+// paddings of that alignment are recomputed from the drop rect.
 fun resolveDrop(
     containerWidthDp: Float,
     containerHeightDp: Float,
@@ -29,7 +31,8 @@ fun resolveDrop(
     childBottomDp: Float,
     centerDeadZoneDp: Float = 20f,
     snapStepDp: Int = 20,
-    snapToGrid: Boolean = true
+    snapToGrid: Boolean = true,
+    lockedAlignment: UpAlignment? = null
 ): UpDropResult {
     val half = centerDeadZoneDp / 2f
     val hCenter = containerWidthDp / 2f
@@ -46,7 +49,7 @@ fun resolveDrop(
         centerY > vCenter + half -> UpAlignment.BOTTOM
         else -> UpAlignment.CENTER
     }
-    val alignment = when {
+    val alignment = lockedAlignment ?: when {
         hAlign == UpAlignment.START && vAlign == UpAlignment.TOP -> UpAlignment.START_TOP
         hAlign == UpAlignment.CENTER && vAlign == UpAlignment.TOP -> UpAlignment.TOP
         hAlign == UpAlignment.END && vAlign == UpAlignment.TOP -> UpAlignment.END_TOP
