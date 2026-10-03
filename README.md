@@ -1,6 +1,6 @@
 # UserPositionedLayout
 
-Last update date: 2026-09-27
+Last update date: 2026-10-03
 
 This is a Kotlin Multiplatform / Compose Multiplatform project targeting Android and iOS.
 
@@ -41,6 +41,32 @@ Use the run configurations provided by the run widget in your IDE's toolbar. You
 Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
 
 - Library tests: `./gradlew :up_layout:iosSimulatorArm64Test`
+
+### Releasing
+
+Library releases are cut from Git tags on `main`. Pushing a tag `vMAJOR.MINOR.PATCH`
+automatically builds `up_layout`, runs its checks, and creates a GitHub Release
+with the library archive attached.
+
+```bash
+git checkout main
+git pull
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The tag is the source of truth for the version: the leading `v` is stripped, so
+tag `v0.1.0` produces library version `0.1.0` (Maven coordinates
+`com.mdsw.uplayout:up_layout:0.1.0`). No version edit is needed before tagging;
+local builds default to `0.0.0-SNAPSHOT`.
+
+Tags must match `v<number>.<number>.<number>` exactly (no prerelease suffixes)
+and must point to a commit contained in `main`; otherwise the workflow fails
+before building.
+
+The resulting release and its `up-layout-<version>.zip` package (Maven
+repository layout with the root, Android, and iOS publications) can be found on
+the repository's GitHub Releases page.
 
 ---
 
