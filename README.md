@@ -63,8 +63,24 @@ GitHub Release (see [Releasing](#releasing) below).
    }
    ```
 
-   Replace `0.1.0` with the release version you downloaded. Gradle's
-   variant-aware resolution picks the matching artifact per target
+   Replace `0.1.0` with the release version you downloaded. If your project
+   uses a version catalog (`gradle/libs.versions.toml`), declare it there
+   instead:
+
+   ```toml
+   [versions]
+   uplayout = "0.1.0"
+
+   [libraries]
+   uplayout = { module = "com.mdsw.uplayout:up_layout", version.ref = "uplayout" }
+   ```
+
+   ```kotlin
+   commonMain.dependencies {
+       implementation(libs.uplayout)
+   }
+   ```
+   Gradle's variant-aware resolution picks the matching artifact per target
    (AAR on Android, klib on iOS), so a single `commonMain` dependency
    is enough.
 
