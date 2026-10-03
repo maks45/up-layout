@@ -12,7 +12,7 @@ This is a Kotlin Multiplatform / Compose Multiplatform project targeting Android
 
 Additional manipulation functions will be defined later.
 
-* [/up_layout](./up_layout/src) is the library KMP module (the `UserPositionedLayout` container itself, soon to be published as a library).
+* [/up_layout](./up_layout/src) is the library KMP module (the `UserPositionedLayout` container itself, distributed as a library via GitHub Releases).
   It contains several subfolders:
   - [commonMain](./up_layout/src/commonMain/kotlin) is for the container state/model, transformation math, and gesture logic common for all targets.
   - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
@@ -28,6 +28,45 @@ Additional manipulation functions will be defined later.
 
 * [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
   you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+
+### Using the library in your KMP project
+
+The library is distributed as a Maven repository archive attached to each
+GitHub Release (see [Releasing](#releasing) below).
+
+1. Download `up-layout-<version>.zip` from the
+   [GitHub Releases page](https://github.com/maks45/up-layout/releases)
+   and unzip it, for example into `libs/up-layout` next to your
+   `settings.gradle.kts`.
+2. Register the unzipped directory as a Maven repository in
+   `settings.gradle.kts`:
+
+   ```kotlin
+   dependencyResolutionManagement {
+       repositories {
+           google()
+           mavenCentral()
+           maven(url = uri("libs/up-layout"))
+       }
+   }
+   ```
+
+3. Add the dependency to your shared module's `commonMain`:
+
+   ```kotlin
+   kotlin {
+       sourceSets {
+           commonMain.dependencies {
+               implementation("com.mdsw.uplayout:up_layout:0.1.0")
+           }
+       }
+   }
+   ```
+
+   Replace `0.1.0` with the release version you downloaded. Gradle's
+   variant-aware resolution picks the matching artifact per target
+   (AAR on Android, klib on iOS), so a single `commonMain` dependency
+   is enough.
 
 ### Running the apps
 
