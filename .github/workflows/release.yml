@@ -1,0 +1,90 @@
+name: Release library
+
+# Tag-based release of the up_layout Kotlin Multiplatform library.
+# Pushing a tag like v0.1.0 (created on main) builds the library with
+# version 0.1.0 and creates a GitHub Release with the library archive.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # The library has Apple targets (iosArm64, iosSimulatorArm64); publish all
+    # artifacts from a single macOS host so the KMP publication is complete.
+    runs-on: macos-latest
+    steps:
+      - name: Check out tagged commit
+        uses: actions/checkout@v4
+        with:
+          # Build the exact commit the tag points to, never the moving branch.
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Validate tag and derive version
+        id: release_version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "Tag: ${TAG}"
+          if [[ ! "${TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid release tag '${TAG}'. Expected format: vMAJOR.MINOR.PATCH (e.g. v0.1.0)."
+            exit 1
+          fi
+          VERSION="${TAG#v}"
+          echo "Release version: ${VERSION}"
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify tag points to main
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          TAG_COMMIT="$(git rev-list -n 1 "${GITHUB_REF_NAME}")"
+          if ! git merge-base --is-ancestor "${TAG_COMMIT}" origin/main; then
+            echo "::error::Tag ${GITHUB_REF_NAME} (${TAG_COMMIT}) is not contained in main. Releases must be tagged on main."
+            exit 1
+          fi
+          echo "Tag commit ${TAG_COMMIT} is contained in origin/main."
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build and test library
+        run: ./gradlew :up_layout:build -Pversion="${{ steps.release_version.outputs.version }}" --console=plain
+
+      - name: Generate release archive
+        run: ./gradlew :up_layout:releaseArchive -Pversion="${{ steps.release_version.outputs.version }}" --console=plain
+
+      - name: Verify release artifacts
+        run: |
+          VERSION="${{ steps.release_version.outputs.version }}"
+          ARCHIVE="up_layout/build/distributions/up-layout-${VERSION}.zip"
+          echo "Release version: ${VERSION}"
+          echo "Tag: ${{ steps.release_version.outputs.tag }}"
+          echo "Artifact: up-layout-${VERSION}.zip"
+          if [ ! -s "${ARCHIVE}" ]; then
+            echo "::error::Expected archive ${ARCHIVE} does not exist or is empty."
+            exit 1
+          fi
+          if [ -z "$(find up_layout/build/repo/com/mdsw/uplayout -path "*${VERSION}*" -name '*.pom')" ]; then
+            echo "::error::No Maven artifacts for version ${VERSION} found in the release repository."
+            exit 1
+          fi
+          echo "ARCHIVE=${ARCHIVE}" >> "${GITHUB_ENV}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_version.outputs.tag }}
+          name: UserPositionedLayout ${{ steps.release_version.outputs.tag }}
+          generate_release_notes: true
+          files: ${{ env.ARCHIVE }}

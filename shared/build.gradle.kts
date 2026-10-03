@@ -24,21 +24,13 @@ kotlin {
        compileSdk = libs.versions.android.compileSdk.get().toInt()
        minSdk = libs.versions.android.minSdk.get().toInt()
     
-       compilerOptions {
-           jvmTarget = JvmTarget.JVM_11
-       }
-       androidResources {
-           enable = true
-       }
-       withHostTest {
-           isIncludeAndroidResources = true
-       }
-       withDeviceTestBuilder {
-           sourceSetTreeName = "test"
-       }.configure {
-           instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-       }
-    }
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+        androidResources {
+            enable = true
+        }
+     }
     
     sourceSets {
         androidMain.dependencies {

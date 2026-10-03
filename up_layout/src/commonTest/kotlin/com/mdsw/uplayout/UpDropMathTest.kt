@@ -98,9 +98,109 @@ class UpDropMathTest {
     }
 
     @Test
-    fun roundToStepRoundsToNearest() {
-        assertEquals(20, roundToStep(12, 20))
-        assertEquals(0, roundToStep(9, 20))
-        assertEquals(40, roundToStep(30, 20))
+    fun lockedAlignmentKeepsAlignmentAndRecomputesItsPaddings() {
+        val result = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 290f,
+            childTopDp = 740f,
+            childRightDp = 390f,
+            childBottomDp = 790f,
+            snapToGrid = false,
+            lockedAlignment = UpAlignment.START_TOP
+        )
+        assertEquals(UpAlignment.START_TOP, result.alignment)
+        assertEquals(UpPadding(top = 740, start = 290), result.padding)
+    }
+
+    @Test
+    fun lockedCenterStaysCenterWithZeroPadding() {
+        val result = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 10f,
+            childTopDp = 10f,
+            childRightDp = 110f,
+            childBottomDp = 60f,
+            snapToGrid = false,
+            lockedAlignment = UpAlignment.CENTER
+        )
+        assertEquals(UpAlignment.CENTER, result.alignment)
+        assertEquals(UpPadding(), result.padding)
+    }
+
+    @Test
+    fun roundIntToStepRoundsToNearest() {
+        assertEquals(20, roundIntToStep(12, 20))
+        assertEquals(0, roundIntToStep(9, 20))
+        assertEquals(40, roundIntToStep(30, 20))
+    }
+
+    @Test
+    fun roundIntToStepReturnsValueForNonPositiveStep() {
+        assertEquals(12, roundIntToStep(12, 0))
+        assertEquals(12, roundIntToStep(12, -4))
+    }
+
+    @Test
+    fun uniformZoneSetsBothAxes() {
+        assertEquals(UpCenterZone(0.2f, 0.2f), UpCenterZone(0.2f))
+    }
+
+    @Test
+    fun wideZoneSnapsOffCenterDropToCenter() {
+        val result = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 100f,
+            childTopDp = 250f,
+            childRightDp = 200f,
+            childBottomDp = 350f,
+            centerZone = UpCenterZone(0.5f),
+            snapToGrid = false
+        )
+        assertEquals(UpAlignment.CENTER, result.alignment)
+    }
+
+    @Test
+    fun zeroZoneSnapsOnlyExactCenter() {
+        val result = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 151f,
+            childTopDp = 350f,
+            childRightDp = 251f,
+            childBottomDp = 450f,
+            centerZone = UpCenterZone(0f),
+            snapToGrid = false
+        )
+        assertEquals(UpAlignment.END, result.alignment)
+    }
+
+    @Test
+    fun horizontalAndVerticalZonesApplyIndependently() {
+        val zone = UpCenterZone(horizontal = 1f, vertical = 0f)
+        val topEdge = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 10f,
+            childTopDp = 10f,
+            childRightDp = 110f,
+            childBottomDp = 60f,
+            centerZone = zone,
+            snapToGrid = false
+        )
+        assertEquals(UpAlignment.TOP, topEdge.alignment)
+        val middle = resolveDrop(
+            containerWidthDp = 400f,
+            containerHeightDp = 800f,
+            childLeftDp = 10f,
+            childTopDp = 350f,
+            childRightDp = 110f,
+            childBottomDp = 450f,
+            centerZone = zone,
+            snapToGrid = false
+        )
+        assertEquals(UpAlignment.CENTER, middle.alignment)
     }
 }
