@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
@@ -80,6 +81,12 @@ jobs:
             exit 1
           fi
           echo "ARCHIVE=${ARCHIVE}" >> "${GITHUB_ENV}"
+
+      - name: Publish to GitHub Packages
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew :up_layout:publishAllPublicationsToGithubPackagesRepository -Pversion="${{ steps.release_version.outputs.version }}" --console=plain
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

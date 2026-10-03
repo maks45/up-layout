@@ -31,22 +31,33 @@ Additional manipulation functions will be defined later.
 
 ### Using the library in your KMP project
 
-The library is distributed as a Maven repository archive attached to each
-GitHub Release (see [Releasing](#releasing) below).
+The library is published to GitHub Packages on every release
+(see [Releasing](#releasing) below), so no manual download is needed.
 
-1. Download `up-layout-<version>.zip` from the
-   [GitHub Releases page](https://github.com/maks45/up-layout/releases)
-   and unzip it, for example into `libs/up-layout` next to your
-   `settings.gradle.kts`.
-2. Register the unzipped directory as a Maven repository in
-   `settings.gradle.kts`:
+1. Create a GitHub Personal Access Token with `read:packages` scope and save
+   it outside version control in `~/.gradle/gradle.properties` (never commit
+   tokens):
+
+   ```properties
+   githubUsername=your-github-username
+   githubToken=your-token-with-read-packages
+   ```
+
+2. Register the GitHub Packages repository in your `settings.gradle.kts`:
 
    ```kotlin
    dependencyResolutionManagement {
        repositories {
            google()
            mavenCentral()
-           maven(url = uri("libs/up-layout"))
+           maven(url = uri("https://maven.pkg.github.com/maks45/up-layout")) {
+               credentials {
+                   val githubUser: String by settings
+                   val githubToken: String by settings
+                   username = githubUser
+                   password = githubToken
+               }
+           }
        }
    }
    ```
@@ -63,7 +74,7 @@ GitHub Release (see [Releasing](#releasing) below).
    }
    ```
 
-   Replace `0.1.0` with the release version you downloaded. If your project
+   Replace `0.1.0` with the release version you want to use. If your project
    uses a version catalog (`gradle/libs.versions.toml`), declare it there
    instead:
 
@@ -83,6 +94,11 @@ GitHub Release (see [Releasing](#releasing) below).
    Gradle's variant-aware resolution picks the matching artifact per target
    (AAR on Android, klib on iOS), so a single `commonMain` dependency
    is enough.
+
+   For fully offline use, each GitHub Release also attaches
+   `up-layout-<version>.zip` (Maven repository layout): unzip it and point a
+   `maven(url = uri(...))` repository at the unzipped directory instead of the
+   GitHub Packages block above.
 
 ### Running the apps
 
