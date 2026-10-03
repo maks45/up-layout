@@ -45,4 +45,10 @@ class UpModelTest {
     fun screenConfigDefaultsToEmpty() {
         assertEquals(emptyList(), UpScreenConfig().items)
     }
+
+    @Test
+    fun editSettingsDefaultToFivePercentCenterZone() {
+        assertEquals(UpCenterZone.Default, UpEditSettings().centerZone)
+        assertEquals(UpCenterZone(0.05f, 0.05f), UpCenterZone.Default)
+    }
 }

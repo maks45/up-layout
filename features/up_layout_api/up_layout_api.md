@@ -1,6 +1,6 @@
 # UpLayout API (rename + edit/view mode + content list)
 
-Last update date: 2026-09-28
+Last update date: 2026-10-03
 
 ## Goal
 
@@ -14,7 +14,7 @@ Simplify the library entry point and make edit vs view behavior explicit:
 
 `up_layout/src/commonMain/kotlin/com/mdsw/uplayout/UpLayout.kt`:
 
-- `UpLayout(items, onItemChanged, modifier, settings, centerDeadZone, isEditMode, onItemClick, configStore, content)`.
+- `UpLayout(items, onItemChanged, modifier, settings, isEditMode, onItemClick, configStore, content)`. Center snapping lives in `settings.centerZone` (`UpCenterZone`, see `features/center_zone/center_zone.md`).
 - `require(items.size == content.size)` — index `i` of `items` pairs with index `i` of `content`.
 - Per-item wrapper is `key(item.id)` so drag state resets per identity, not per full data change.
 - Shared bounds mapping lives in `Modifier.upPlacedItem` (alignment + bounds via `upItemBounds`).

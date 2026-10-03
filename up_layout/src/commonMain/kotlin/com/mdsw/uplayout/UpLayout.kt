@@ -26,10 +26,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.dp
 
 /**
  * User-manipulable container. In edit mode children can be dragged, pinched to
@@ -42,7 +40,6 @@ fun UpLayout(
     onItemChanged: (UpItem) -> Unit,
     modifier: Modifier = Modifier,
     settings: UpEditSettings = UpEditSettings(),
-    centerDeadZone: Dp = 20.dp,
     isEditMode: Boolean = true,
     onItemClick: (UpItem) -> Unit = {},
     configStore: UpScreenConfigStore? = null,
@@ -71,7 +68,6 @@ fun UpLayout(
             onItemChanged = onItemChanged,
             modifier = modifier,
             settings = settings,
-            centerDeadZone = centerDeadZone,
             onItemClick = onItemClick,
             content = content
         )
@@ -107,7 +103,6 @@ private fun EditModeLayout(
     onItemChanged: (UpItem) -> Unit,
     modifier: Modifier = Modifier,
     settings: UpEditSettings = UpEditSettings(),
-    centerDeadZone: Dp = 20.dp,
     onItemClick: (UpItem) -> Unit = {},
     content: List<@Composable BoxScope.() -> Unit>
 ) {
@@ -123,7 +118,7 @@ private fun EditModeLayout(
 
     Box(
         modifier = modifier
-            .upEditContainer(settings, centerDeadZone, colors.background, colors.primary)
+            .upEditContainer(settings, colors.background, colors.primary)
             .pointerInput(Unit) {
                 detectTapGestures(onTap = { selectedId = null })
             }
@@ -223,8 +218,7 @@ private fun EditModeLayout(
                                         rect = childRects[latestItem.id] ?: Rect.Zero,
                                         item = latestItem,
                                         settings = latest.settings,
-                                        density = latest.density,
-                                        centerDeadZone = centerDeadZone.value
+                                        density = latest.density
                                     )?.let(latest.onItemChanged)
                                     dragOffset.value = IntOffset.Zero
                                 }
@@ -283,8 +277,7 @@ private fun dropUpdate(
     rect: Rect,
     item: UpItem,
     settings: UpEditSettings,
-    density: Float,
-    centerDeadZone: Float
+    density: Float
 ): UpItem? {
     if (settings.lockMove || containerSize.width <= 0 || containerSize.height <= 0) return null
     val pxToDp = 1f / density
@@ -295,7 +288,7 @@ private fun dropUpdate(
         childTopDp = rect.top * pxToDp,
         childRightDp = rect.right * pxToDp,
         childBottomDp = rect.bottom * pxToDp,
-        centerDeadZoneDp = centerDeadZone,
+        centerZone = settings.centerZone,
         snapStepDp = settings.snapStepDp,
         snapToGrid = settings.snapToGrid,
         lockedAlignment = if (settings.lockSnaps) item.alignment else null

@@ -16,6 +16,8 @@
     <string name="step_move">Move</string>
     <string name="step_rotate">Rotate</string>
     <string name="step_scale">Scale</string>
+    <string name="center_zone_x">Center X</string>
+    <string name="center_zone_y">Center Y</string>
     <string name="drag_me_a">Drag me (a)</string>
     <string name="drag_me_b">Drag me (b)</string>
 </resources>

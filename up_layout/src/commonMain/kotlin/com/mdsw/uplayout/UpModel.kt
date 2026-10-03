@@ -44,6 +44,24 @@ data class UpScreenConfig(
     @SerialName("frames") val items: List<UpItem> = emptyList()
 )
 
+/**
+ * CENTER snapping zone as fractions (0..1) of the container size.
+ * A drop whose center falls inside the zone snaps to CENTER on that axis.
+ * [horizontal] is the zone width relative to the container width,
+ * [vertical] the zone height relative to the container height.
+ * `UpCenterZone(all)` sets both axes at once; [Default] is 5%.
+ */
+data class UpCenterZone(
+    val horizontal: Float,
+    val vertical: Float
+) {
+    constructor(all: Float) : this(all, all)
+
+    companion object {
+        val Default = UpCenterZone(0.05f)
+    }
+}
+
 /** Edit-mode configuration: grid rendering, snapping steps and transform locks. */
 data class UpEditSettings(
     val showGrid: Boolean = true,
@@ -69,6 +87,11 @@ data class UpEditSettings(
     val visibleStepDp: Int = 40,
     val rotationStepDegrees: Float = 4f,
     val scaleStepDp: Int = 4,
+    /**
+     * CENTER snapping zone, per axis, as a fraction of the container size.
+     * Rendered as the center alignment grid; [UpCenterZone.all] sets both axes.
+     */
+    val centerZone: UpCenterZone = UpCenterZone.Default,
     val lockMove: Boolean = false,
     val lockRotation: Boolean = false,
     val lockScale: Boolean = false,

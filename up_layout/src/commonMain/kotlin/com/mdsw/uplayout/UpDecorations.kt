@@ -56,13 +56,12 @@ internal fun Modifier.upFrameBorder(
 /** Container background + edit-mode grids. */
 internal fun Modifier.upEditContainer(
     settings: UpEditSettings,
-    centerSize: Dp,
     backgroundColor: Color,
     primary: Color
 ): Modifier = this
     .background(color = backgroundColor)
     .dashedBorder(primary)
-    .drawAlignmentGrid(primary, centerSize, settings.showAlignmentGrid, settings.alignmentGridBorder)
+    .drawAlignmentGrid(primary, settings.centerZone, settings.showAlignmentGrid, settings.alignmentGridBorder)
     .drawSnapGrid(settings.visibleStepDp.dp, settings.showGrid, border = settings.gridBorder)
 
 internal fun UpAlignment.toComposeAlignment(): Alignment {
@@ -104,7 +103,7 @@ private fun Modifier.dashedRect(
 
 internal fun Modifier.drawAlignmentGrid(
     color: Color,
-    centerSize: Dp,
+    centerZone: UpCenterZone,
     showAlignmentGrid: Boolean = true,
     border: BorderStroke? = null
 ) =
@@ -112,8 +111,8 @@ internal fun Modifier.drawAlignmentGrid(
     else drawBehind {
         val brush = border?.brush ?: SolidColor(color)
         val strokeWidth = border?.width?.toPx() ?: 1f
-        val x = size.width / 2f - centerSize.toPx() / 2
-        val y = size.height / 2f - centerSize.toPx() / 2
+        val x = size.width * (0.5f - centerZone.horizontal.coerceIn(0f, 1f) / 2f)
+        val y = size.height * (0.5f - centerZone.vertical.coerceIn(0f, 1f) / 2f)
         fun gridLine(start: Offset, end: Offset) = drawLine(brush, start, end, strokeWidth)
 
         gridLine(Offset(x, 0f), Offset(x, size.height))

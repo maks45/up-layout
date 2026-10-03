@@ -19,7 +19,9 @@ fun roundToStep(value: Int, step: Int): Int = roundIntToStep(value, step)
 
 // Pure port of IACreator's updateAlignmentAndPadding. All values are dp,
 // child bounds are in container coordinates. No Compose types involved.
-// centerDeadZoneDp is the full width/height of the CENTER snapping band.
+// centerZone holds the CENTER snapping band per axis as a fraction (0..1)
+// of the container size: the band is containerWidthDp * horizontal wide and
+// containerHeightDp * vertical tall, centered on the container center.
 // When lockedAlignment is provided, the alignment is kept and only the
 // paddings of that alignment are recomputed from the drop rect.
 fun resolveDrop(
@@ -29,24 +31,25 @@ fun resolveDrop(
     childTopDp: Float,
     childRightDp: Float,
     childBottomDp: Float,
-    centerDeadZoneDp: Float = 20f,
+    centerZone: UpCenterZone = UpCenterZone.Default,
     snapStepDp: Int = 20,
     snapToGrid: Boolean = true,
     lockedAlignment: UpAlignment? = null
 ): UpDropResult {
-    val half = centerDeadZoneDp / 2f
+    val halfW = containerWidthDp * centerZone.horizontal.coerceIn(0f, 1f) / 2f
+    val halfH = containerHeightDp * centerZone.vertical.coerceIn(0f, 1f) / 2f
     val hCenter = containerWidthDp / 2f
     val vCenter = containerHeightDp / 2f
     val centerX = (childLeftDp + childRightDp) / 2f
     val centerY = (childTopDp + childBottomDp) / 2f
     val hAlign = when {
-        centerX < hCenter - half -> UpAlignment.START
-        centerX > hCenter + half -> UpAlignment.END
+        centerX < hCenter - halfW -> UpAlignment.START
+        centerX > hCenter + halfW -> UpAlignment.END
         else -> UpAlignment.CENTER
     }
     val vAlign = when {
-        centerY < vCenter - half -> UpAlignment.TOP
-        centerY > vCenter + half -> UpAlignment.BOTTOM
+        centerY < vCenter - halfH -> UpAlignment.TOP
+        centerY > vCenter + halfH -> UpAlignment.BOTTOM
         else -> UpAlignment.CENTER
     }
     val alignment = lockedAlignment ?: when (hAlign to vAlign) {

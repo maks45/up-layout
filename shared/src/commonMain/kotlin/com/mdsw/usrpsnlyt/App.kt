@@ -42,6 +42,8 @@ import org.jetbrains.compose.resources.stringResource
 
 import userpositionedlayout.shared.generated.resources.Res
 import userpositionedlayout.shared.generated.resources.app_name
+import userpositionedlayout.shared.generated.resources.center_zone_x
+import userpositionedlayout.shared.generated.resources.center_zone_y
 import userpositionedlayout.shared.generated.resources.drag_me_a
 import userpositionedlayout.shared.generated.resources.drag_me_b
 import userpositionedlayout.shared.generated.resources.edit_layout
@@ -146,56 +148,104 @@ fun App(persistLayout: Boolean = true) {
             bottomBar = {
                 if (isEditMode) {
                     Surface {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            val steps = listOf(
-                                StepSpec(
-                                    label = stringResource(Res.string.step_move),
-                                    value = editSettings.snapStepDp.toString(),
-                                    onMinus = {
-                                        editSettings = editSettings.copy(
-                                            snapStepDp = (editSettings.snapStepDp - 1).coerceAtLeast(1)
-                                        )
-                                    },
-                                    onPlus = {
-                                        editSettings = editSettings.copy(
-                                            snapStepDp = editSettings.snapStepDp + 1
-                                        )
-                                    }
-                                ),
-                                StepSpec(
-                                    label = stringResource(Res.string.step_rotate),
-                                    value = editSettings.rotationStepDegrees.toString(),
-                                    onMinus = {
-                                        editSettings = editSettings.copy(
-                                            rotationStepDegrees = (editSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
-                                        )
-                                    },
-                                    onPlus = {
-                                        editSettings = editSettings.copy(
-                                            rotationStepDegrees = editSettings.rotationStepDegrees + 1f
-                                        )
-                                    }
-                                ),
-                                StepSpec(
-                                    label = stringResource(Res.string.step_scale),
-                                    value = editSettings.scaleStepDp.toString(),
-                                    onMinus = {
-                                        editSettings = editSettings.copy(
-                                            scaleStepDp = (editSettings.scaleStepDp - 1).coerceAtLeast(1)
-                                        )
-                                    },
-                                    onPlus = {
-                                        editSettings = editSettings.copy(
-                                            scaleStepDp = editSettings.scaleStepDp + 1
-                                        )
-                                    }
+                        Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                val steps = listOf(
+                                    StepSpec(
+                                        label = stringResource(Res.string.step_move),
+                                        value = editSettings.snapStepDp.toString(),
+                                        onMinus = {
+                                            editSettings = editSettings.copy(
+                                                snapStepDp = (editSettings.snapStepDp - 1).coerceAtLeast(1)
+                                            )
+                                        },
+                                        onPlus = {
+                                            editSettings = editSettings.copy(
+                                                snapStepDp = editSettings.snapStepDp + 1
+                                            )
+                                        }
+                                    ),
+                                    StepSpec(
+                                        label = stringResource(Res.string.step_rotate),
+                                        value = editSettings.rotationStepDegrees.toString(),
+                                        onMinus = {
+                                            editSettings = editSettings.copy(
+                                                rotationStepDegrees = (editSettings.rotationStepDegrees - 1f).coerceAtLeast(1f)
+                                            )
+                                        },
+                                        onPlus = {
+                                            editSettings = editSettings.copy(
+                                                rotationStepDegrees = editSettings.rotationStepDegrees + 1f
+                                            )
+                                        }
+                                    ),
+                                    StepSpec(
+                                        label = stringResource(Res.string.step_scale),
+                                        value = editSettings.scaleStepDp.toString(),
+                                        onMinus = {
+                                            editSettings = editSettings.copy(
+                                                scaleStepDp = (editSettings.scaleStepDp - 1).coerceAtLeast(1)
+                                            )
+                                        },
+                                        onPlus = {
+                                            editSettings = editSettings.copy(
+                                                scaleStepDp = editSettings.scaleStepDp + 1
+                                            )
+                                        }
+                                    )
                                 )
-                            )
-                            steps.forEach { spec ->
-                                StepControl(spec.label, spec.value, spec.onMinus, spec.onPlus)
+                                steps.forEach { spec ->
+                                    StepControl(spec.label, spec.value, spec.onMinus, spec.onPlus)
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                val centerSteps = listOf(
+                                    StepSpec(
+                                        label = stringResource(Res.string.center_zone_x),
+                                        value = centerZonePercent(editSettings.centerZone.horizontal),
+                                        onMinus = {
+                                            editSettings = editSettings.copy(
+                                                centerZone = editSettings.centerZone.copy(
+                                                    horizontal = (editSettings.centerZone.horizontal - 0.01f).coerceAtLeast(0f)
+                                                )
+                                            )
+                                        },
+                                        onPlus = {
+                                            editSettings = editSettings.copy(
+                                                centerZone = editSettings.centerZone.copy(
+                                                    horizontal = (editSettings.centerZone.horizontal + 0.01f).coerceAtMost(1f)
+                                                )
+                                            )
+                                        }
+                                    ),
+                                    StepSpec(
+                                        label = stringResource(Res.string.center_zone_y),
+                                        value = centerZonePercent(editSettings.centerZone.vertical),
+                                        onMinus = {
+                                            editSettings = editSettings.copy(
+                                                centerZone = editSettings.centerZone.copy(
+                                                    vertical = (editSettings.centerZone.vertical - 0.01f).coerceAtLeast(0f)
+                                                )
+                                            )
+                                        },
+                                        onPlus = {
+                                            editSettings = editSettings.copy(
+                                                centerZone = editSettings.centerZone.copy(
+                                                    vertical = (editSettings.centerZone.vertical + 0.01f).coerceAtMost(1f)
+                                                )
+                                            )
+                                        }
+                                    )
+                                )
+                                centerSteps.forEach { spec ->
+                                    StepControl(spec.label, spec.value, spec.onMinus, spec.onPlus)
+                                }
                             }
                         }
                     }
@@ -250,6 +300,9 @@ private data class StepSpec(
     val onMinus: () -> Unit,
     val onPlus: () -> Unit
 )
+
+private fun centerZonePercent(fraction: Float): String =
+    "${(fraction * 100).toInt()}%"
 
 private fun demoConfig() = UpScreenConfig(
     items = listOf(

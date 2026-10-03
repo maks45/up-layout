@@ -1,6 +1,6 @@
 # Grid settings toggles
 
-Last update date: 2026-09-29
+Last update date: 2026-10-03
 
 ## Goal
 
@@ -18,9 +18,10 @@ and add the missing visibility toggle for the center alignment grid.
 
 ## Rendering
 
-- `UpDecorations.drawAlignmentGrid(color, centerSize, showAlignmentGrid = true)`
+- `UpDecorations.drawAlignmentGrid(color, centerZone, showAlignmentGrid = true)`
   returns `this` unchanged when off, mirroring the existing `drawSnapGrid`
-  early-return pattern.
+  early-return pattern. `centerZone` is an `UpCenterZone` fraction of the
+  container size (see `features/center_zone/center_zone.md`).
 - `UpLayout.EditModeLayout` passes `settings.showAlignmentGrid` through; dot
   grid and snap guides were already gated by `showGrid` / `showSnapGuides`.
 - View mode draws nothing, unchanged.
