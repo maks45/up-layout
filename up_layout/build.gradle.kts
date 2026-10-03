@@ -81,6 +81,20 @@ publishing {
             name = "release"
             url = uri(layout.buildDirectory.dir("repo"))
         }
+        // Remote repository for dependency consumers (no manual download).
+        // CI publishes here with GITHUB_ACTOR/GITHUB_TOKEN; see release.yml.
+        maven {
+            name = "githubPackages"
+            url = uri("https://maven.pkg.github.com/maks45/up-layout")
+            credentials {
+                username = providers.gradleProperty("githubUsername")
+                    .orElse(providers.environmentVariable("GITHUB_ACTOR"))
+                    .getOrElse("")
+                password = providers.gradleProperty("githubToken")
+                    .orElse(providers.environmentVariable("GITHUB_TOKEN"))
+                    .getOrElse("")
+            }
+        }
     }
 }
 
