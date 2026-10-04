@@ -75,9 +75,6 @@ Demo/sample navigation routes should follow this:
 - Long-lived branches:
   - `main`
   - `development`
-- Release branches:
-  - `rel/<major>.<minor>.<patch>` (e.g. `rel/1.1.6`)
-- Use `development` as the default integration base unless explicitly instructed otherwise.
 
 ## Design Guidelines
 
@@ -86,17 +83,6 @@ Demo/sample navigation routes should follow this:
 - Prefer flexible layout composition using `Alignment` and `Arrangement` instead of hardcoded spacing values (for example, fixed `padding`) whenever possible, so UI adapts better to different screen sizes. This is especially important for a resizable/rotatable container.
 - Interaction affordances (drag, rotate, resize handles) must remain discoverable and usable at different container sizes and densities.
 - Do not use app or release versions as default labels in design deliverables. If a version label is required, ask the user for the exact version first.
-
-## Versioning Rule (Android + iOS must match)
-
-Android and iOS app versions must always be kept in sync in the same change — strict sync is required on every version bump:
-
-- Android version values currently defined in:
-  - `androidApp/build.gradle.kts` (`versionCode`, `versionName`).
-- iOS version values currently defined in:
-  - `iosApp/Configuration/Config.xcconfig` (`MARKETING_VERSION`, `CURRENT_PROJECT_VERSION`).
-
-When updating release version, update both Android and iOS version definitions together in the same change.
 
 ## Workflow Rules
 
