@@ -141,8 +141,6 @@ the repository's GitHub Releases page.
 
 ---
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
-
 ## Contributing
 
 When contributing with agentic coding, follow the principles in [AGENTS.md](./AGENTS.md).
